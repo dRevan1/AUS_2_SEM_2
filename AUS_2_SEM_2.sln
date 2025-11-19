@@ -5,7 +5,7 @@ VisualStudioVersion = 17.14.36603.0 d17.14
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{2B7CC639-71DA-4847-B04E-26BABDCF09B7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AppLogicLibrary", "AppLogicLibrary\AppLogicLibrary.csproj", "{1F234C40-D646-4753-9BF0-852CAE61C3ED}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEM_2_CORE", "AppLogicLibrary\SEM_2_CORE.csproj", "{1F234C40-D646-4753-9BF0-852CAE61C3ED}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

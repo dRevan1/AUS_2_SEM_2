@@ -8,7 +8,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\AppLogicLibrary\AppLogicLibrary.csproj" />
+    <ProjectReference Include="..\AppLogicLibrary\SEM_2_CORE.csproj" />
   </ItemGroup>
 
 </Project>
