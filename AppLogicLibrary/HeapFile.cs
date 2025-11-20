@@ -1,6 +1,6 @@
 ﻿namespace SEM_2_CORE;
 
-public class HeapFile<T> where T : IDataClassInterface<T>
+public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 {
     public string FilePath { get; set; }
     public int BlockSize { get; set; }

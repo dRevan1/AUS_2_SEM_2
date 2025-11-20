@@ -1,10 +1,8 @@
 ﻿namespace SEM_2_CORE;
 
-public interface IDataClassInterface<T>
+public interface IByteOperations
 {
-    bool Equals(T obj);
     int GetSize();
-    T CreateClass(T self);
     byte[] GetBytes();
     void FromBytes(byte[] bytes);
 }
