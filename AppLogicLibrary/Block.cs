@@ -58,4 +58,38 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
             position += step;
         }
     }
+
+    public void InsertRecord(T record)
+    {
+        if (ValidCount < RecordsCount)
+        {
+            RecordsList[ValidCount] = record.CreateClass();
+            ValidCount++;
+            return;
+        }
+
+        Console.WriteLine($"Cannot insert record, block is full with valid count {ValidCount} and blocking factor {RecordsCount}");
+    }
+
+    public void DeleteRecord(T record)
+    {
+        int recordIndex = -1;
+        for (int i = 0; i < RecordsList.Count; i++)
+        {
+            if (record.Equals(RecordsList[i]))
+            {
+                recordIndex = i;
+                break;
+            }
+        }
+
+        if (recordIndex == -1)
+        {
+            Console.WriteLine("Record to delete not found in block.");
+            return;
+        }
+
+        RecordsList[recordIndex] = RecordsList[ValidCount - 1].CreateClass();
+        ValidCount--;
+    }
 }

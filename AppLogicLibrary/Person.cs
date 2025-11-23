@@ -1,4 +1,6 @@
-﻿namespace SEM_2_CORE;
+﻿using System.Xml.Linq;
+
+namespace SEM_2_CORE;
 
 public class Person : IDataClassOperations<Person>, IByteOperations
 {
@@ -15,12 +17,12 @@ public class Person : IDataClassOperations<Person>, IByteOperations
 
     public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id)
     {
-        Name = StringConverter.PadString(name, NameLength);
-        Surname = StringConverter.PadString(surname, SurnameLength);
+        Name = name;
+        Surname = surname;
         DayOfBirth = dayOfBirth;
         MonthOfBirth = monthOfBirth;
         YearOfBirth = yearOfBirth;
-        ID = StringConverter.PadString(id, IDLength);
+        ID = id;
     }
 
     public bool Equals(Person other)
@@ -28,7 +30,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         return other.ID == ID;
     }
 
-    public int GetSize()
+    public int GetSize()  // teraz je to 85 bytov
     {
         int size = 1 + (sizeof(char) * NameLength); // meno (name) má max 15 znakov + 1 byte pre počet platných typu byte, to nám stačí na max 15 hodnotu
         size += 1 + (sizeof(char) * SurnameLength); // priezvisko (surname) má max 14 znakov + 1 byte -||-
@@ -45,6 +47,9 @@ public class Person : IDataClassOperations<Person>, IByteOperations
     public byte[] GetBytes()
     {
         List<byte> byteBuffer = new List<byte>();
+        Name = StringConverter.PadString(Name, NameLength);
+        Surname = StringConverter.PadString(Surname, SurnameLength);
+        ID = StringConverter.PadString(ID, IDLength);
 
         byteBuffer.Add(StringConverter.GetValidChars(Name));
         byteBuffer.AddRange(StringConverter.StringToBytes(Name));  // meno + valid count
