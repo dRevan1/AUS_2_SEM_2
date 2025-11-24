@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reflection;
 
 namespace SEM_2_CORE;
 
@@ -38,16 +39,18 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         return default;
     }
 
+    // using lebo keď to padlo pred close, tak bez vymazania súboru zostal vysieť -> expection being used by another process, takto je uvoľnený aj pri exception
     private FileStream? CheckIndex(int index, T data)
     {
-        FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);  // kontrola indexu
+        FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite); // kontrola indexu
         if (index == 0 && stream.Length == 0)
         {
             return stream;
         }
         if (stream.Length < (index + 1) * BlockSize || index < 0)
         {
-            Console.WriteLine($"Index {index} is out of range!");
+            stream.Close();
+            //Console.WriteLine($"Index {index} is out of range!");
             return default;
         }
 
@@ -68,6 +71,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
     private void TruncateFile(FileStream stream)
     {
+        FreeBlocks.Sort();
         int firstFree = FreeBlocks.Last();  // ak to bol posledný blok, tak sa iba skráti na length 0, inak toľko blokov, koľko je na konci voľných
         if (stream.Length / BlockSize == 1)
         {
@@ -75,7 +79,12 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             stream.SetLength(0);
             return;
         }
-        FreeBlocks.Sort();
+
+        if (FreeBlocks.Count == 1)
+        {
+            firstFree = FreeBlocks[0];
+            FreeBlocks.Clear();
+        }
 
         for (int i = (FreeBlocks.Count - 2); i >= 0; i--)
         {
@@ -96,7 +105,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public int Insert(T data)
     {
         int index;
-        FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+        using FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         Block<T> block;
 
         if (PartiallyFreeBlocks.Count > 0)  // prioritné použitie častočne voľného bloku, potom voľného
@@ -153,14 +162,15 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public T? Get(int index, T data)
     {
         T? result;
-        FileStream? stream = CheckIndex(index, data);  // kontrola indexu
+        using FileStream? stream = CheckIndex(index, data);  // kontrola indexu
         if (stream == null)
         {
             return default;
         }
         if (stream.Length == 0)
         {
-            Console.WriteLine($"No data at index {index}, the file is empty!");
+            stream.Close();
+            //Console.WriteLine($"No data at index {index}, the file is empty!");
             return default;
         }
         Block<T> block = LoadBlockFromFile(stream, data, index);  // načítanie bloku zo súboru
@@ -168,17 +178,25 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
         if (result == null)
         {
-            Console.WriteLine($"Record was not found at the index {index}.");
+            //Console.WriteLine($"Record was not found at the index {index}.");
         }
+        stream.Close();
+
         return result;
     }
 
     public T? Delete(int index, T data)
     {
         T? result;
-        FileStream? stream = CheckIndex(index, data);  // kontrola indexu
+        using FileStream? stream = CheckIndex(index, data);  // kontrola indexu
         if (stream == null)
         {
+            return default;
+        }
+        if (stream.Length == 0)
+        {
+            stream.Close();
+            //Console.WriteLine($"No data at index {index}, the file is empty!");
             return default;
         }
 
@@ -187,7 +205,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
         if (result == null)
         {
-            Console.WriteLine($"Record was not found at the index {index}");
+            //Console.WriteLine($"Record was not found at the index {index}");
             return result;
         }
         int countBeforeDelete = block.ValidCount;
@@ -228,5 +246,31 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public void CloseFile()
     {
 
+    }
+
+    public List<Block<T>> GetFileContents(T dataInstance) 
+    {
+        List<Block<T>> blockLIst = new List<Block<T>>();
+        using FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+
+        if (stream.Length == 0)
+        {
+            stream.Close();
+            return blockLIst;
+        }
+        int blockCount = (int)stream.Length / BlockSize;
+
+        for (int i = 0; i < blockCount; i++)
+        {
+            Block<T> block = new Block<T>(BlockFactor, dataInstance);
+            stream.Seek(i * BlockSize, SeekOrigin.Begin);
+            byte[] blockBytes = new byte[BlockSize];
+            stream.ReadExactly(blockBytes, 0, BlockSize);
+            block.FromBytes(blockBytes);
+            blockLIst.Add(block);
+        }
+
+        stream.Close();
+        return blockLIst;
     }
 }
