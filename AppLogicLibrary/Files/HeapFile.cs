@@ -246,13 +246,13 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
     public List<Block<T>> GetFileContents(T dataInstance) 
     {
-        List<Block<T>> blockLIst = new List<Block<T>>();
+        List<Block<T>> blockList = new List<Block<T>>();
         using FileStream stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
 
         if (stream.Length == 0)
         {
             stream.Close();
-            return blockLIst;
+            return blockList;
         }
         int blockCount = (int)stream.Length / BlockSize;
 
@@ -263,10 +263,10 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             byte[] blockBytes = new byte[BlockSize];
             stream.ReadExactly(blockBytes, 0, BlockSize);
             block.FromBytes(blockBytes);
-            blockLIst.Add(block);
+            blockList.Add(block);
         }
 
         stream.Close();
-        return blockLIst;
+        return blockList;
     }
 }

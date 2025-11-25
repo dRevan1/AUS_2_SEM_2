@@ -22,7 +22,7 @@ namespace GUI
         {
             HeapFileTester tester = new HeapFileTester();
             tester.InsertData(HeapFile[0], 10);
-            MessageBox.Show("File has been populated.");
+            MessageBox.Show("File(s) has/have been populated.");
         }
 
         private void ViewContentBtn_Click(object sender, RoutedEventArgs e)

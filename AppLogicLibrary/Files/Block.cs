@@ -29,7 +29,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
     public override string ToString()
     {
         string result = "";
-        for (int i = 0; i < ValidCount; i++)
+        for (int i = 0; i < RecordsCount; i++)
         {
             result += $"Record {i + 1}:\n";
             result += RecordsList[i].ToString();
