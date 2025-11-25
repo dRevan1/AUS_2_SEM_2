@@ -80,12 +80,6 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             return;
         }
 
-        if (FreeBlocks.Count == 1)
-        {
-            firstFree = FreeBlocks[0];
-            FreeBlocks.Clear();
-        }
-
         for (int i = (FreeBlocks.Count - 2); i >= 0; i--)
         {
             if (FreeBlocks[i] == firstFree - 1)
@@ -99,6 +93,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             }
         }
 
+        FreeBlocks.RemoveAt(FreeBlocks.Count - 1);
         stream.SetLength(firstFree * BlockSize);
     }
 
