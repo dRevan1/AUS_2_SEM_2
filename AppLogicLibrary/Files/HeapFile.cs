@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SEM_2_CORE.Interfaces;
+using System;
 using System.Reflection;
 
 namespace SEM_2_CORE;
@@ -20,7 +21,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         FreeBlocks = new List<int>();
         PartiallyFreeBlocks = new List<int>();
 
-        int usedSpace = 4 + (BlockFactor * dataInstance.GetSize());
+        int usedSpace = 4 + BlockFactor * dataInstance.GetSize();
         PaddingSize = BlockSize - usedSpace;
     }
 
@@ -80,7 +81,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             return;
         }
 
-        for (int i = (FreeBlocks.Count - 2); i >= 0; i--)
+        for (int i = FreeBlocks.Count - 2; i >= 0; i--)
         {
             if (FreeBlocks[i] == firstFree - 1)
             {
@@ -229,7 +230,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         }
         stream.Write(finalBytes, 0, BlockSize);
 
-        if (index == (stream.Length / BlockSize) - 1 && block.ValidCount == 0)  // ak sa vymazal posledný záznam v bloku a bol to posledný blok, tak sa súbor skráti
+        if (index == stream.Length / BlockSize - 1 && block.ValidCount == 0)  // ak sa vymazal posledný záznam v bloku a bol to posledný blok, tak sa súbor skráti
         {
             TruncateFile(stream);
         }

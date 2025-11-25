@@ -1,7 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using System.Security.Cryptography;
-
-namespace SEM_2_CORE;
+﻿namespace SEM_2_CORE.Testers;
 
 public class HeapFileTester
 {
@@ -12,7 +9,12 @@ public class HeapFileTester
         int blockFactor = heapFile.BlockFactor;
         for (int i = 0; i < dataCount; i++)
         {
-            Person person = new Person("Name" + i, "Surname" + i, 10, 10, 2001, i.ToString()); // doplniť random dátum in range
+            DateTime randomDate = RandomDate(new DateTime(1960, 1, 1), new DateTime(2023, 12, 31));
+            byte day = (byte)randomDate.Day;
+            byte month = (byte)randomDate.Month;
+            ushort year = (ushort)randomDate.Year;
+
+            Person person = new Person("Name" + i, "Surname" + i, day, month, year, i.ToString());
             int index = i % blockFactor;
 
             if (index == 0)
@@ -24,6 +26,13 @@ public class HeapFileTester
         }
 
         return insertedBlocksRecord;
+    }
+
+    private DateTime RandomDate(DateTime start, DateTime end)
+    {
+        Random rand = new Random();
+        int range = (end - start).Days;
+        return start.AddDays(rand.Next(range));
     }
 
     private bool ComparePerson(Person? p1, Person? p2)  // na testovanie pre istotu porovnanie všetkých načítaných hodnôt

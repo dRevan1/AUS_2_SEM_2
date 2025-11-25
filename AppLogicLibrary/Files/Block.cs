@@ -1,4 +1,6 @@
-﻿namespace SEM_2_CORE;
+﻿using SEM_2_CORE.Interfaces;
+
+namespace SEM_2_CORE;
 
 public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByteOperations
 {
@@ -22,6 +24,18 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
                 RecordsList.Add(DataInstance.CreateClass());  // keď sa insertuje nový blok, teda nenačíta sa zo súboru, tak sa naplní inštanciou toho záznamu, ktorý tam ide, použije sa pri inserte
             }
         }
+    }
+
+    public override string ToString()
+    {
+        string result = "";
+        for (int i = 0; i < ValidCount; i++)
+        {
+            result += $"Record {i + 1}:\n";
+            result += RecordsList[i].ToString();
+            result += "--------------------\n";
+        }
+        return result;
     }
 
     public int GetSize()

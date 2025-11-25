@@ -1,4 +1,5 @@
-﻿using System.Xml.Linq;
+﻿using SEM_2_CORE.Interfaces;
+using System.Xml.Linq;
 
 namespace SEM_2_CORE;
 
@@ -23,6 +24,11 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         MonthOfBirth = monthOfBirth;
         YearOfBirth = yearOfBirth;
         ID = id;
+    }
+
+    public override string ToString()
+    {
+        return $"Name: {Name}\nSurname: {Surname}\nDate of Birth: {DayOfBirth}.{MonthOfBirth}.{YearOfBirth}\nID: {ID}\n";
     }
 
     public bool Equals(Person other)

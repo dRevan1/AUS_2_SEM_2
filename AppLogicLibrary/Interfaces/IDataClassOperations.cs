@@ -1,4 +1,4 @@
-﻿namespace SEM_2_CORE;
+﻿namespace SEM_2_CORE.Interfaces;
 
 public interface IDataClassOperations<T>
 {

@@ -1,11 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.36603.0 d17.14
+VisualStudioVersion = 17.14.36603.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ConsoleApp", "ConsoleApp\ConsoleApp.csproj", "{2B7CC639-71DA-4847-B04E-26BABDCF09B7}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SEM_2_CORE", "AppLogicLibrary\SEM_2_CORE.csproj", "{1F234C40-D646-4753-9BF0-852CAE61C3ED}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GUI", "GUI\GUI.csproj", "{ABFF0653-B1BC-4E8C-B733-6CDC62374550}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -21,6 +23,10 @@ Global
 		{1F234C40-D646-4753-9BF0-852CAE61C3ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1F234C40-D646-4753-9BF0-852CAE61C3ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1F234C40-D646-4753-9BF0-852CAE61C3ED}.Release|Any CPU.Build.0 = Release|Any CPU
+		{ABFF0653-B1BC-4E8C-B733-6CDC62374550}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{ABFF0653-B1BC-4E8C-B733-6CDC62374550}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{ABFF0653-B1BC-4E8C-B733-6CDC62374550}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{ABFF0653-B1BC-4E8C-B733-6CDC62374550}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
