@@ -63,6 +63,7 @@ public class HeapFileTester
         if (insertedBlocksActual.Count != insertedBlocksRecord.Count)
         {
             Console.WriteLine($"Insert test failed - block counts are not equal - record {insertedBlocksRecord.Count}, actual in file {insertedBlocksActual}.");
+            heapFile.CloseFile();
             return;
         }
 
@@ -71,11 +72,13 @@ public class HeapFileTester
             if (insertedBlocksActual[i].RecordsList.Count != heapFile.BlockFactor)
             {
                 Console.WriteLine($"Block at index {i} has incorrect record count - {insertedBlocksActual[i].RecordsList.Count}, block factor is {heapFile.BlockFactor}.");
+                heapFile.CloseFile();
                 return;
             }
             if (insertedBlocksActual[i].ValidCount != insertedBlocksRecord[i].Count)
             {
                 Console.WriteLine($"Block at index {i} has incorrect valid records - {insertedBlocksActual[i].ValidCount}, inserted {insertedBlocksRecord[i].Count}.");
+                heapFile.CloseFile();
                 return;
             }
             for (int j = 0; j < insertedBlocksRecord[i].Count; j++)
@@ -89,11 +92,12 @@ public class HeapFileTester
                     Console.WriteLine($"Month of birth inserted: {insertedBlocksRecord[i][j].MonthOfBirth}, Month of birth from file: {insertedBlocksActual[i].RecordsList[j].MonthOfBirth}");
                     Console.WriteLine($"Year of birth inserted: {insertedBlocksRecord[i][j].YearOfBirth}, Year of birth from file: {insertedBlocksActual[i].RecordsList[j].YearOfBirth}");
                     Console.WriteLine($"ID inserted: {insertedBlocksRecord[i][j].ID}, ID from file: {insertedBlocksActual[i].RecordsList[j].ID}");
+                    heapFile.CloseFile();
                     return;
                 }
             }
         }
-
+        heapFile.CloseFile();
         Console.WriteLine($"Insert test passed, path - {filePath}, block size - {blockSize}, insert count - {insertCount}.");
     }
 
@@ -143,11 +147,13 @@ public class HeapFileTester
             if (foundPerson == null)
             {
                 Console.WriteLine($"Get test failed - successful get - block at index {blockIndex} - got null instead of valid result.");
+                heapFile.CloseFile();
                 return;
             }
             if (!ComparePerson(getPerson, foundPerson))
             {
                 Console.WriteLine($"Get test failed - successful get - block index {blockIndex} - found person ID {foundPerson.ID} is different than expected ID {getPerson!.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -157,10 +163,12 @@ public class HeapFileTester
             if (foundPerson != null)
             {
                 Console.WriteLine($"Get test failed - failed get - block at index {blockIndex} - expected null but got valid result with ID {foundPerson.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
 
+        heapFile.CloseFile();
         Console.WriteLine($"Get test passed, path - {filePath}, block size - {blockSize}, data count - {dataCount}, get count - {getCount}.");
     }
 
@@ -232,6 +240,7 @@ public class HeapFileTester
         if (blocksAfterDelete.Count != insertedBlocksRecord.Count)
         {
             Console.WriteLine($"Delete test failed - block counts are not equal after delete - record {insertedBlocksRecord.Count}, actual in file {blocksAfterDelete.Count}.");
+            heapFile.CloseFile();
             return;
         }
         if (insertedBlocksRecord.Count == 0)
@@ -239,6 +248,7 @@ public class HeapFileTester
             if (heapFile.FreeBlocks.Count > 0 || heapFile.PartiallyFreeBlocks.Count > 0)
             {
                 Console.WriteLine($"Delete test failed - file is empty, but heap file lists contain {heapFile.FreeBlocks.Count} free blocks and {heapFile.PartiallyFreeBlocks.Count} partially free blocks.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -248,11 +258,13 @@ public class HeapFileTester
             if (blocksAfterDelete[i].RecordsList.Count != heapFile.BlockFactor)
             {
                 Console.WriteLine($"Block at index {i} has incorrect record count - {blocksAfterDelete[i].RecordsList.Count}, block factor is {heapFile.BlockFactor}.");
+                heapFile.CloseFile();
                 return;
             }
             if (blocksAfterDelete[i].ValidCount != insertedBlocksRecord[i].Count)
             {
                 Console.WriteLine($"Block at index {i} has incorrect valid records - {blocksAfterDelete[i].ValidCount}, inserted {insertedBlocksRecord[i].Count}.");
+                heapFile.CloseFile();
                 return;
             }
             for (int j = 0; j < insertedBlocksRecord[i].Count; j++)
@@ -266,6 +278,7 @@ public class HeapFileTester
                     Console.WriteLine($"Month of birth: {insertedBlocksRecord[i][j].MonthOfBirth}, Month of birth from file: {blocksAfterDelete[i].RecordsList[j].MonthOfBirth}");
                     Console.WriteLine($"Year of birth: {insertedBlocksRecord[i][j].YearOfBirth}, Year of birth from file: {blocksAfterDelete[i].RecordsList[j].YearOfBirth}");
                     Console.WriteLine($"ID: {insertedBlocksRecord[i][j].ID}, ID from file: {blocksAfterDelete[i].RecordsList[j].ID}");
+                    heapFile.CloseFile();
                     return;
                 }
             }
@@ -290,11 +303,13 @@ public class HeapFileTester
         if (heapFile.FreeBlocks.Count != freeBlocks.Count)  // kontrola voľných blokov
         {
             Console.WriteLine($"Delete test failed - free block counts are not equal - record {freeBlocks.Count}, actual in file {heapFile.FreeBlocks.Count}.");
+            heapFile.CloseFile();
             return;
         }
         if (heapFile.PartiallyFreeBlocks.Count != partiallyFreeBlocks.Count)
         {
             Console.WriteLine($"Delete test failed - partially free block counts are not equal - record {partiallyFreeBlocks.Count}, actual in file {heapFile.PartiallyFreeBlocks.Count}.");
+            heapFile.CloseFile();
             return;
         }
 
@@ -303,6 +318,7 @@ public class HeapFileTester
             if (heapFile.FreeBlocks[i] != freeBlocks[i])
             {
                 Console.WriteLine($"Delete test failed - free block at index {i} is not equal - record {freeBlocks[i]}, actual in file {heapFile.FreeBlocks[i]}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -311,6 +327,7 @@ public class HeapFileTester
             if (heapFile.PartiallyFreeBlocks[i] != partiallyFreeBlocks[i])
             {
                 Console.WriteLine($"Delete test failed - partially free block at index {i} is not equal - record {partiallyFreeBlocks[i]}, actual in file {heapFile.PartiallyFreeBlocks[i]}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -320,11 +337,13 @@ public class HeapFileTester
             if (deletedPerson == null)
             {
                 Console.WriteLine($"Delete test failed - successful delete - block at index {blockIndex} - got null instead of valid result.");
+                heapFile.CloseFile();
                 return;
             }
             if (!ComparePerson(personToDelete, deletedPerson))
             {
                 Console.WriteLine($"Delete test failed - successful delete - block index {blockIndex} - deleted person ID {deletedPerson.ID} is different than expected ID {personToDelete!.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -334,10 +353,12 @@ public class HeapFileTester
             if (deletedPerson != null)
             {
                 Console.WriteLine($"Delete test failed - failed delete - block at index {blockIndex} - expected null but got valid result with ID {deletedPerson.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
 
+        heapFile.CloseFile();
         Console.WriteLine($"Delete test passed, path - {filePath}, block size - {blockSize}, data count - {dataCount}, delete count - {deleteCount}.");
     }
 
@@ -384,6 +405,7 @@ public class HeapFileTester
                     if (blocksRecord[blockIndex].Count < heapFile.BlockFactor)
                     {
                         partiallyFreeBlocks.Add(blockIndex);
+                        partiallyFreeBlocks.Sort();
                     }
                 }
                 else
@@ -479,6 +501,7 @@ public class HeapFileTester
                     if (blocksRecord[blockIndex].Count == 0)
                     {
                         freeBlocks.Add(blockIndex);
+                        freeBlocks.Sort();
                         if (heapFile.BlockFactor > 1)
                         {
                             partiallyFreeBlocks.Remove(blockIndex);
@@ -487,6 +510,7 @@ public class HeapFileTester
                     else if (blocksRecord[blockIndex].Count == heapFile.BlockFactor - 1)
                     {
                         partiallyFreeBlocks.Add(blockIndex);
+                        partiallyFreeBlocks.Sort();
                     }
 
                     if (blocksRecord.Last().Count == 0)
@@ -512,6 +536,7 @@ public class HeapFileTester
         if (blocksAfterOperations.Count != blocksRecord.Count)
         {
             Console.WriteLine($"Heap file test failed - block counts are not equal after delete - record {blocksRecord.Count}, actual in file {blocksAfterOperations.Count}.");
+            heapFile.CloseFile();
             return;
         }
         if (blocksRecord.Count == 0)
@@ -519,6 +544,7 @@ public class HeapFileTester
             if (heapFile.FreeBlocks.Count > 0 || heapFile.PartiallyFreeBlocks.Count > 0)
             {
                 Console.WriteLine($"Heap file test failed - file is empty, but heap file lists contain {heapFile.FreeBlocks.Count} free blocks and {heapFile.PartiallyFreeBlocks.Count} partially free blocks.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -529,11 +555,13 @@ public class HeapFileTester
             if (foundPerson == null)
             {
                 Console.WriteLine($"Get test failed - successful get - block at index {blockIndex} - got null instead of valid result.");
+                heapFile.CloseFile();
                 return;
             }
             if (!ComparePerson(getPerson, foundPerson))
             {
                 Console.WriteLine($"Get test failed - successful get - block index {blockIndex} - found person ID {foundPerson.ID} is different than expected ID {getPerson!.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -543,21 +571,24 @@ public class HeapFileTester
             if (foundPerson != null)
             {
                 Console.WriteLine($"Get test failed - failed get - block at index {blockIndex} - expected null but got valid result with ID {foundPerson.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
 
         // kontrola obsahu súboru po všetkých operáciách
-        for (int i = 0; i < blocksRecord.Count; i++)  // kontrola obsahu súboru, čo zostalo po mazaní, samotné záznamy sa kontrolujú iba platné, ale kontroluje sa aj celkový počet načítaných
+        for (int i = 0; i < blocksRecord.Count; i++)  // kontrola obsahu súboru, čo zostalo po operáciách, samotné záznamy sa kontrolujú iba platné, ale kontroluje sa aj celkový počet načítaných
         {
             if (blocksAfterOperations[i].RecordsList.Count != heapFile.BlockFactor)
             {
                 Console.WriteLine($"Block at index {i} has incorrect record count - {blocksAfterOperations[i].RecordsList.Count}, block factor is {heapFile.BlockFactor}.");
+                heapFile.CloseFile();
                 return;
             }
             if (blocksAfterOperations[i].ValidCount != blocksRecord[i].Count)
             {
                 Console.WriteLine($"Block at index {i} has incorrect valid records - {blocksAfterOperations[i].ValidCount}, inserted {blocksRecord[i].Count}.");
+                heapFile.CloseFile();
                 return;
             }
             for (int j = 0; j < blocksRecord[i].Count; j++)
@@ -571,6 +602,7 @@ public class HeapFileTester
                     Console.WriteLine($"Month of birth: {blocksRecord[i][j].MonthOfBirth}, Month of birth from file: {blocksAfterOperations[i].RecordsList[j].MonthOfBirth}");
                     Console.WriteLine($"Year of birth: {blocksRecord[i][j].YearOfBirth}, Year of birth from file: {blocksAfterOperations[i].RecordsList[j].YearOfBirth}");
                     Console.WriteLine($"ID: {blocksRecord[i][j].ID}, ID from file: {blocksAfterOperations[i].RecordsList[j].ID}");
+                    heapFile.CloseFile();
                     return;
                 }
             }
@@ -584,11 +616,13 @@ public class HeapFileTester
         if (heapFile.FreeBlocks.Count != freeBlocks.Count)  // kontrola voľných blokov
         {
             Console.WriteLine($"Heap file test failed - free block counts are not equal - record {freeBlocks.Count}, actual in file {heapFile.FreeBlocks.Count}.");
+            heapFile.CloseFile();
             return;
         }
         if (heapFile.PartiallyFreeBlocks.Count != partiallyFreeBlocks.Count)
         {
-            Console.WriteLine($"Heap file test failed - partially free block counts are not equal - record {partiallyFreeBlocks.Count}, actual in file {heapFile.PartiallyFreeBlocks.Count}.");
+            Console.WriteLine($"Heap file test failed - partially free block counts are not equal - record {partiallyFreeBlocks.Count}, actual in file {heapFile.PartiallyFreeBlocks.Count}.");heapFile.CloseFile();
+            heapFile.CloseFile();
             return;
         }
 
@@ -597,6 +631,7 @@ public class HeapFileTester
             if (heapFile.FreeBlocks[i] != freeBlocks[i])
             {
                 Console.WriteLine($"Heap file test failed - free block at index {i} is not equal - record {freeBlocks[i]}, actual in file {heapFile.FreeBlocks[i]}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -605,6 +640,7 @@ public class HeapFileTester
             if (heapFile.PartiallyFreeBlocks[i] != partiallyFreeBlocks[i])
             {
                 Console.WriteLine($"Heap file test failed - partially free block at index {i} is not equal - record {partiallyFreeBlocks[i]}, actual in file {heapFile.PartiallyFreeBlocks[i]}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -615,11 +651,13 @@ public class HeapFileTester
             if (deletedPerson == null)
             {
                 Console.WriteLine($"Heap file test failed - successful delete - block at index {blockIndex} - got null instead of valid result.");
+                heapFile.CloseFile();
                 return;
             }
             if (!ComparePerson(personToDelete, deletedPerson))
             {
                 Console.WriteLine($"Heap file test failed - successful delete - block index {blockIndex} - deleted person ID {deletedPerson.ID} is different than expected ID {personToDelete!.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
@@ -629,11 +667,12 @@ public class HeapFileTester
             if (deletedPerson != null)
             {
                 Console.WriteLine($"Heap file test failed - failed delete - block at index {blockIndex} - expected null but got valid result with ID {deletedPerson.ID}.");
+                heapFile.CloseFile();
                 return;
             }
         }
 
+        heapFile.CloseFile();
         Console.WriteLine($"Heap file test passed, path - {filePath}, block size - {blockSize}, operations - {operations}.");
-
     }
 }

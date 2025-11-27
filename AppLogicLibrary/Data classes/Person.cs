@@ -74,7 +74,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         return bytes;
     }
 
-    public void FromBytes(byte[] bytes)   // zatiaľ char 2 byte akože utf 16 c# char, asi zmením na 1 byte ASCII
+    public void FromBytes(byte[] bytes)   // zatiaľ char 2 byte akože utf 16 c# char
     {
         byte validChars = bytes[0];
         int position = 1;
