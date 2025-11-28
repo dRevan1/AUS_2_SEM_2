@@ -1,5 +1,5 @@
 ﻿using SEM_2_CORE.Interfaces;
-using System.Xml.Linq;
+using SEM_2_CORE.Tools;
 
 namespace SEM_2_CORE.Data_classes;
 
@@ -45,6 +45,11 @@ public class PCRTest : IDataClassOperations<PCRTest>, IByteOperations
         _string += $"Note: {Note}\n";
 
         return _string;
+    }
+
+    public override int GetHashCode()
+    {
+        return CustomHash.GetHashCode(ID);
     }
 
     public bool Equals(PCRTest obj)

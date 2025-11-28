@@ -1,4 +1,5 @@
 ﻿using SEM_2_CORE.Interfaces;
+using SEM_2_CORE.Tools;
 
 namespace SEM_2_CORE;
 
@@ -27,6 +28,11 @@ public class Person : IDataClassOperations<Person>, IByteOperations
     public override string ToString()
     {
         return $"Name: {Name}\nSurname: {Surname}\nDate of Birth: {DayOfBirth}.{MonthOfBirth}.{YearOfBirth}\nID: {ID}\n";
+    }
+
+    public override int GetHashCode()
+    {
+        return CustomHash.GetHashCode(ID);
     }
 
     public bool Equals(Person other)

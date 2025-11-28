@@ -1,4 +1,4 @@
-﻿namespace SEM_2_CORE;
+﻿namespace SEM_2_CORE.Tools;
 
 public static class StringConverter
 {

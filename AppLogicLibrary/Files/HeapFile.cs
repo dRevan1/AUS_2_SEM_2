@@ -30,7 +30,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         Stream.Close();
     }
 
-    private T? TryToFindRecord(Block<T> block, T record)
+    public T? TryToFindRecord(Block<T> block, T record)
     {
         T result;
         for (int i = 0; i < block.ValidCount; i++)  // prejdú sa validné záznamy a skúsi sa nájsť hľadaný záznam
@@ -57,7 +57,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         return true;
     }
 
-    private Block<T> LoadBlockFromFile(T data, int index)
+    public Block<T> LoadBlockFromFile(T data, int index)
     {
         Block<T> block = new Block<T>(BlockFactor, data);
         Stream.Seek(index * BlockSize, SeekOrigin.Begin);  // vytvorenie streamu a seekovanie na index, načítanie dát pre blok a naplnenie v inštancii

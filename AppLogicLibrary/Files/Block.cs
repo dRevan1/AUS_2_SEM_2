@@ -9,7 +9,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
     public int ValidCount { get; set; }
     public T DataInstance { get; set; }
 
-    public Block(int blockFactor, T instance, bool newBlock = false)
+    public Block(int blockFactor, T instance, bool newBlock = false, bool emptyBlock = false)
     {
         RecordsCount = blockFactor;
         ValidCount = 0;
@@ -18,7 +18,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
 
         if (newBlock)
         {
-            ValidCount++;
+            ValidCount = emptyBlock ? 0 : 1;
             for (int i = 0; i < RecordsCount; i++)
             {
                 RecordsList.Add(DataInstance.CreateClass());  // keď sa insertuje nový blok, teda nenačíta sa zo súboru, tak sa naplní inštanciou toho záznamu, ktorý tam ide, použije sa pri inserte
@@ -38,14 +38,14 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
         return result;
     }
 
-    public int GetSize()
+    public virtual int GetSize()
     {
         int size = sizeof(int); // ínt pre ValidCount, následne jednotlivé záznamy
         size += RecordsCount * DataInstance.GetSize();
         return size;
     }
 
-    public byte[] GetBytes()
+    public virtual byte[] GetBytes()
     {
         List<byte> byteBuffer = new List<byte>();
         byteBuffer.AddRange(BitConverter.GetBytes(ValidCount));  // konverzia valid count
@@ -58,7 +58,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
         return byteBuffer.ToArray();
     }
 
-    public void FromBytes(byte[] bytes)
+    public virtual void FromBytes(byte[] bytes)
     {
         int position = 0, step = DataInstance.GetSize();
         ValidCount = BitConverter.ToInt32(bytes.AsSpan(position, 4).ToArray()); // prečíta sa valid count a nastaví sa na prvý záznam
@@ -73,16 +73,17 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
         }
     }
 
-    public void InsertRecord(T record)
+    public bool InsertRecord(T record)
     {
         if (ValidCount < RecordsCount)
         {
             RecordsList[ValidCount] = record.CreateClass();
             ValidCount++;
-            return;
+            return true;
         }
 
         Console.WriteLine($"Cannot insert record, block is full with valid count {ValidCount} and blocking factor {RecordsCount}");
+        return false;
     }
 
     public void DeleteRecord(T record)
