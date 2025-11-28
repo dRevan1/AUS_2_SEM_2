@@ -1,19 +1,17 @@
 ﻿using SEM_2_CORE.Interfaces;
-using System.Xml.Linq;
 
 namespace SEM_2_CORE;
 
 public class Person : IDataClassOperations<Person>, IByteOperations
 {
-    public const byte NameLength = 15;
-    public const byte SurnameLength = 14;
-    public const byte IDLength = 10;
+    private const byte NameLength = 15;
+    private const byte SurnameLength = 14;
+    private const byte IDLength = 10;
     public string Name { get; set; }
     public string Surname { get; set; }
     public byte DayOfBirth { get; set; }
     public byte MonthOfBirth { get; set; }
     public ushort YearOfBirth { get; set; }
-
     public string ID { get; set; }
 
     public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id)
@@ -36,6 +34,11 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         return other.ID == ID;
     }
 
+    public Person CreateClass()
+    {
+        return new Person(Name, Surname, DayOfBirth, MonthOfBirth, YearOfBirth, ID);
+    }
+
     public int GetSize()  // teraz je to 85 bytov
     {
         int size = 1 + (sizeof(char) * NameLength); // meno (name) má max 15 znakov + 1 byte pre počet platných typu byte, to nám stačí na max 15 hodnotu
@@ -43,11 +46,6 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         size += 2 + sizeof(ushort); // pre dátum je 1 byte pre deň a mesiac + ushort veľkosť pre rok
         size += 1 + (sizeof(char) * IDLength); // ID je max 10 znakov + 1 byte
         return size;
-    }
-
-    public Person CreateClass()
-    {
-        return new Person(Name, Surname, DayOfBirth, MonthOfBirth, YearOfBirth, ID);
     }
 
     public byte[] GetBytes()
@@ -80,20 +78,20 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         int position = 1;
         byte[] charBytes = bytes.AsSpan(position, NameLength * 2).ToArray();  // slice arrayu od indexu 1 s dĺžkou stringu pre name
         Name = StringConverter.StringFromBytes(charBytes, validChars);
-        position += (15 * 2);
+        position += (NameLength * 2);
 
         validChars = bytes[position];  // o jeden ďalej je validná dĺžka pre surname
         position++;
 
         charBytes = bytes.AsSpan(position, SurnameLength * 2).ToArray();  // slice arrayu od indexu kde začína surname
         Surname = StringConverter.StringFromBytes(charBytes, validChars);
-        position += (14 * 2);
+        position += (SurnameLength * 2);
 
         DayOfBirth = bytes[position];
         MonthOfBirth = bytes[position + 1];
         position += 2;
 
-        YearOfBirth = BitConverter.ToUInt16(bytes.AsSpan(position, 2).ToArray()); // vybratie roku a posun
+        YearOfBirth = BitConverter.ToUInt16(bytes.AsSpan(position, 2)); // vybratie roku a posun
         position += 2;
 
         validChars = bytes[position];

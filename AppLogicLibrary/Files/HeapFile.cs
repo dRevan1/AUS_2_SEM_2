@@ -25,6 +25,11 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         PaddingSize = BlockSize - usedSpace;
     }
 
+    ~HeapFile()
+    {
+        Stream.Close();
+    }
+
     private T? TryToFindRecord(Block<T> block, T record)
     {
         T result;
@@ -229,7 +234,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
     public void CloseFile()
     {
-        Stream.Close();
+        
     }
 
     public List<Block<T>> GetFileContents(T dataInstance) 
