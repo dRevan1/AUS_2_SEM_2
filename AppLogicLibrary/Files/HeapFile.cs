@@ -29,46 +29,6 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     {
         Stream.Close();
     }
-
-    public T? TryToFindRecord(Block<T> block, T record)
-    {
-        T result;
-        for (int i = 0; i < block.ValidCount; i++)  // prejdú sa validné záznamy a skúsi sa nájsť hľadaný záznam
-        {
-            if (block.RecordsList[i].Equals(record))  // po načítaní z bytov ak má T string tak bude bez paddingu, teda porovnáva sa bez paddingu
-            {
-                result = block.RecordsList[i];
-                return result;
-            }
-        }
-
-        return default;
-    }
-
-    // using lebo keď to padlo pred close, tak bez vymazania súboru zostal vysieť -> expection being used by another process, takto je uvoľnený aj pri exception
-    private bool CheckIndex(int index, T data)
-    {
-        if (Stream.Length < (index + 1) * BlockSize || index < 0)
-        {
-            //Console.WriteLine($"Index {index} is out of range!");
-            return false;
-        }
-
-        return true;
-    }
-
-    public Block<T> LoadBlockFromFile(T data, int index)
-    {
-        Block<T> block = new Block<T>(BlockFactor, data);
-        Stream.Seek(index * BlockSize, SeekOrigin.Begin);  // vytvorenie streamu a seekovanie na index, načítanie dát pre blok a naplnenie v inštancii
-        byte[] blockBytes = new byte[BlockSize];
-        Stream.ReadExactly(blockBytes, 0, BlockSize);
-        block.FromBytes(blockBytes);
-        Stream.Seek(index * BlockSize, SeekOrigin.Begin); // seek naspät, lebo sa bude do bloku potenciálne zapisovať
-
-        return block;
-    } 
-
     private void TruncateFile()
     {
         FreeBlocks.Sort();
@@ -96,6 +56,57 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         FreeBlocks.RemoveAt(FreeBlocks.Count - 1);
         Stream.SetLength(firstFree * BlockSize);
     }
+
+    private void WriteBlock(Block<T> block)  // už treba byť naseekovaný na správnom indexe
+    {
+        byte[] finalBytes = new byte[BlockSize];
+        byte[] blockBytes = block.GetBytes();
+        byte[] padding = new byte[PaddingSize];
+        Buffer.BlockCopy(blockBytes, 0, finalBytes, 0, blockBytes.Length);
+        if (PaddingSize > 0)
+        {
+            Buffer.BlockCopy(padding, 0, finalBytes, blockBytes.Length, padding.Length);
+        }
+        Stream.Write(finalBytes, 0, BlockSize);
+    }
+
+    public T? TryToFindRecord(Block<T> block, T record)
+    {
+        T result;
+        for (int i = 0; i < block.ValidCount; i++)  // prejdú sa validné záznamy a skúsi sa nájsť hľadaný záznam
+        {
+            if (block.RecordsList[i].Equals(record))  // po načítaní z bytov ak má T string tak bude bez paddingu, teda porovnáva sa bez paddingu
+            {
+                result = block.RecordsList[i];
+                return result;
+            }
+        }
+
+        return default;
+    }
+
+    public bool CheckIndex(int index)
+    {
+        if (Stream.Length < (index + 1) * BlockSize || index < 0)
+        {
+            //Console.WriteLine($"Index {index} is out of range!");
+            return false;
+        }
+
+        return true;
+    }
+
+    public Block<T> LoadBlockFromFile(T data, int index)
+    {
+        Block<T> block = new Block<T>(BlockFactor, data);
+        Stream.Seek(index * BlockSize, SeekOrigin.Begin);  // vytvorenie streamu a seekovanie na index, načítanie dát pre blok a naplnenie v inštancii
+        byte[] blockBytes = new byte[BlockSize];
+        Stream.ReadExactly(blockBytes, 0, BlockSize);
+        block.FromBytes(blockBytes);
+        Stream.Seek(index * BlockSize, SeekOrigin.Begin); // seek naspät, lebo sa bude do bloku potenciálne zapisovať
+
+        return block;
+    } 
 
     public int Insert(T data)
     {
@@ -139,23 +150,14 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             }
         }
 
-        byte[] finalBytes = new byte[BlockSize];
-        byte[] blockBytes = block.GetBytes();
-        byte[] padding = new byte[PaddingSize];
-        Buffer.BlockCopy(blockBytes, 0, finalBytes, 0, blockBytes.Length);
-        if (PaddingSize > 0)
-        {
-            Buffer.BlockCopy(padding, 0, finalBytes, blockBytes.Length, padding.Length);
-        }
-        Stream.Write(finalBytes, 0, BlockSize);
-
+        WriteBlock(block);
         return index;
     }
 
     public T? Get(int index, T data)
     {
         T? result;
-        if (!CheckIndex(index, data))   // kontrola indexu
+        if (!CheckIndex(index))   // kontrola indexu
         {
             return default;
         }
@@ -178,7 +180,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public T? Delete(int index, T data)
     {
         T? result;
-        if (!CheckIndex(index, data))  // kontrola indexu
+        if (!CheckIndex(index))  // kontrola indexu
         {
             return default;
         }
@@ -214,16 +216,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             PartiallyFreeBlocks.Sort();
         }
 
-        byte[] finalBytes = new byte[BlockSize];
-        byte[] blockBytes = block.GetBytes();
-        byte[] padding = new byte[PaddingSize];
-        Buffer.BlockCopy(blockBytes, 0, finalBytes, 0, blockBytes.Length);
-        if (PaddingSize > 0)
-        {
-            Buffer.BlockCopy(padding, 0, finalBytes, blockBytes.Length, padding.Length);
-        }
-        Stream.Write(finalBytes, 0, BlockSize);
-
+        WriteBlock(block);
         if (index == Stream.Length / BlockSize - 1 && block.ValidCount == 0)  // ak sa vymazal posledný záznam v bloku a bol to posledný blok, tak sa súbor skráti
         {
             TruncateFile();
@@ -258,5 +251,31 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         }
 
         return blockList;
+    }
+
+    public int InsertAt(int index, Block<T> block)
+    {
+        if (!CheckIndex(index) && index != -1)
+        {
+            Console.WriteLine($"Index {index} is out of range!");
+        }
+
+        if (index == -1)
+        {
+            if (FreeBlocks.Count > 0)
+            {
+                index = FreeBlocks[0];
+                FreeBlocks.RemoveAt(0);
+            }
+            else
+            {
+                Stream.SetLength(Stream.Length + BlockSize);
+                index = (int)(Stream.Length / BlockSize) - 1;
+            }
+            Stream.Seek(index * BlockSize, SeekOrigin.Begin);
+        }
+
+        WriteBlock(block);
+        return index;
     }
 }

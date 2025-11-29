@@ -9,7 +9,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
     public int ValidCount { get; set; }
     public T DataInstance { get; set; }
 
-    public Block(int blockFactor, T instance, bool newBlock = false, bool emptyBlock = false)
+    public Block(int blockFactor, T instance, bool newBlock = false, bool emptyBlock = false)  // !!! neksôr potenciálne vymazať emptyBlock !!!!!!!
     {
         RecordsCount = blockFactor;
         ValidCount = 0;
