@@ -5,9 +5,11 @@ namespace SEM_2_CORE.Files;
 public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperations
 {
     private int ModFunction { get; set; }
-    private uint SplitPointer { get; set; } = 0;
+    private int SplitPointer { get; set; } = 0;
     private HeapFile<T> PrimaryFile { get; set; }
     private HeapFile<T> OverflowFile { get; set; }
+    private int TotalRecordsCount { get; set; } = 0;   // dočasne pre split podľa prednášky na testovanie a minimálnu hodnotu na benchmark
+    private int TotalSpace { get; set; } = 0;
 
 
     public LinearHashFile(int minMod, string primaryFilePath, string overflowFilePath, int primaryBlockSize, int overflowBlockSize, T dataInstance)
@@ -19,7 +21,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
     private bool SplitCondition()
     {
-        return true;
+        return TotalRecordsCount / (TotalSpace) > 0.8;  // dočasne, aby sa dalo otestovať insert
     }
 
     private bool MergeCondition()
@@ -27,14 +29,136 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         return true;
     }
 
-    private void Split()
+    private void Split(T record)
     {
+        while (SplitCondition())
+        {
+            PrimaryHashBlock<T> splitBlock = (PrimaryHashBlock<T>)PrimaryFile.LoadBlockFromFile(record, SplitPointer);
+            PrimaryHashBlock<T> newBlock = new PrimaryHashBlock<T>(PrimaryFile.BlockSize, record, emptyBlock: true);
+            List<OverflowHashBlock<T>> splitOverflowBlocks = new List<OverflowHashBlock<T>>();
+            List<OverflowHashBlock<T>> newOverflowBlocks = new List<OverflowHashBlock<T>>();
+            OverflowHashBlock<T> overflowBlock;
+            List<T> splitRecords = new List<T>();
+            List<T> newRecords = new List<T>();
 
+            foreach (var vrecord in splitBlock.RecordsList)
+            {
+                int index = vrecord.GetHashCode();
+                if (index < SplitPointer)
+                {
+                    splitRecords.Add(vrecord);
+                }
+                else
+                {
+                    newRecords.Add(vrecord);
+                }
+            }
+            splitBlock.ValidCount = 0;
+
+            if (splitBlock.NextBlockIndex != -1)
+            {
+                overflowBlock = (OverflowHashBlock<T>)OverflowFile.LoadBlockFromFile(record, splitBlock.NextBlockIndex);
+                while (overflowBlock.NextBlockIndex != -1)
+                {
+                    foreach (var vrecord in overflowBlock.RecordsList)
+                    {
+                        int index = vrecord.GetHashCode();
+                        if (index < SplitPointer)
+                        {
+                            splitRecords.Add(vrecord);
+                        }
+                        else
+                        {
+                            newRecords.Add(vrecord);
+                        }
+                    }
+                    splitOverflowBlocks.Add(overflowBlock);
+                    overflowBlock.ValidCount = 0;
+                    overflowBlock = (OverflowHashBlock<T>)OverflowFile.LoadBlockFromFile(record, overflowBlock.NextBlockIndex);
+                }
+            }
+            int overflowBlocksCount = splitOverflowBlocks.Count;
+
+            for (int i = 0; i < splitRecords.Count; i++ )   // na začiatku sa pridávajú, ktoré majú ísť do split bloku (pôvodného) do primárneho bloku
+            {
+                if (i < splitBlock.RecordsCount)
+                {
+                    splitBlock.InsertRecord(splitRecords[i]);
+                }
+                else   // keď sa naplní, tak ostatné sa pridávajú do jeho preplňovacích podľa indexu
+                {
+                    int index = (i - PrimaryFile.BlockFactor) / OverflowFile.BlockFactor;
+                    splitOverflowBlocks[index].InsertRecord(splitRecords[i]);
+                }
+            }
+
+            if (splitOverflowBlocks.Count > 0)
+            {
+                overflowBlock = splitOverflowBlocks.Last();
+                while (overflowBlock.ValidCount == 0)
+                {
+                    int index = (splitOverflowBlocks.Count > 1) ? splitOverflowBlocks[splitOverflowBlocks.Count - 2].NextBlockIndex : splitBlock.NextBlockIndex;
+                    OverflowFile.FreeBlocks.Add(index);
+                    splitOverflowBlocks.RemoveAt(splitOverflowBlocks.Count - 1);
+                    if (splitOverflowBlocks.Count == 0)
+                    {
+                        break;
+                    }
+                    overflowBlock = splitOverflowBlocks.Last();
+                }
+                if (splitOverflowBlocks.Count > 0)
+                {
+                    splitOverflowBlocks.Last().NextBlockIndex = -1;
+                }
+
+                OverflowFile.FreeBlocks.Sort();
+            }
+            else
+            {
+                splitBlock.NextBlockIndex = -1;
+            }
+            PrimaryFile.InsertAt(SplitPointer, splitBlock);
+
+            for (int i = 0; i < newRecords.Count; i++)
+            {
+                if (i < newBlock.RecordsCount)
+                {
+                    newBlock.InsertRecord(newRecords[i]);
+                }
+                else   // keď sa naplní, tak ostatné sa pridávajú do jeho preplňovacích, ktoré treba vytvoriť
+                {
+                    int index = (i - PrimaryFile.BlockFactor) / OverflowFile.BlockFactor;
+                    if (index == newOverflowBlocks.Count)
+                    {
+                        overflowBlock = new OverflowHashBlock<T>(OverflowFile.BlockSize, record, emptyBlock: true);
+                    }
+                    newOverflowBlocks[index].InsertRecord(newRecords[i]);
+                }
+            }
+
+
+            overflowBlocksCount = (splitOverflowBlocks.Count + newOverflowBlocks.Count) - overflowBlocksCount;
+            TotalSpace += overflowBlocksCount * OverflowFile.BlockFactor;
+        }
+
+        if (SplitPointer + 1 == ModFunction)
+        {
+            ModFunction *= 2;
+            SplitPointer = 0;
+        }
+        else
+        {
+            SplitPointer++;
+        }
     }
 
     private void Merge()
     {
+        while (MergeCondition())
+        {
 
+
+        }
     }
 
     public int Insert(T record)
@@ -51,6 +175,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         {
             PrimaryFile.InsertAt(index, primaryBlock);
             primaryBlock.TotalRecordsCount++;
+            TotalRecordsCount++;
             return index;
         }
         if (primaryBlock.NextBlockIndex == -1)  // blok je plný ale nemá preplňovací blok - vytvoríme nový a zapíšeme na index -1, takže sa v HeapFile zapíše do nového voľného miesta
@@ -59,6 +184,8 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             nextBlockIndex = OverflowFile.InsertAt(-1, overflowBlock);
             primaryBlock.NextBlockIndex = nextBlockIndex;
             primaryBlock.TotalRecordsCount++;
+            TotalRecordsCount++;
+            TotalSpace += (OverflowFile.BlockFactor - 1);
             return index;
         }
 
@@ -75,16 +202,18 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                 OverflowHashBlock<T> newOverflowBlock = new OverflowHashBlock<T>(OverflowFile.BlockSize, record, true);
                 nextBlockIndex = OverflowFile.InsertAt(-1, newOverflowBlock);
                 overflowBlock.NextBlockIndex = nextBlockIndex;
+                TotalSpace += (OverflowFile.BlockFactor - 1);
                 break;
             }
             overflowBlock = (OverflowHashBlock<T>)OverflowFile.LoadBlockFromFile(record, overflowBlock.NextBlockIndex);
         } 
         while (overflowBlock.NextBlockIndex != -1);  // prejdenie zreťazenia overflow blokov až na koniec
         primaryBlock.TotalRecordsCount++;
+        TotalRecordsCount++;
 
         if (SplitCondition())
         {
-            Split();
+            Split(record);
         }
 
         return index;
