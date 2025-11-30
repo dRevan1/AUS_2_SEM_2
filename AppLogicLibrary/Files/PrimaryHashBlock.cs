@@ -5,7 +5,11 @@ public class PrimaryHashBlock<T> : Block<T> where T : IDataClassOperations<T>, I
 {
     public int NextBlockIndex { get; set; } = -1;
     public uint TotalRecordsCount { get; set; } = 0;
-    public PrimaryHashBlock(int blockSize, T dataInstance, bool newBlock = false, bool emptyBlock = false) : base(blockSize, dataInstance, newBlock, emptyBlock)
+    public PrimaryHashBlock(int blockFactor, T dataInstance, bool newBlock = false, bool emptyBlock = false) : base(blockFactor, dataInstance, newBlock, emptyBlock)
+    {
+    }
+
+    public PrimaryHashBlock() : base()
     {
     }
 

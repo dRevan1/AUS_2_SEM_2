@@ -5,7 +5,11 @@ namespace SEM_2_CORE.Files;
 public class OverflowHashBlock<T> : Block<T> where T : IDataClassOperations<T>, IByteOperations
 {
     public int NextBlockIndex { get; set; } = -1;
-    public OverflowHashBlock(int blockSize, T dataInstance, bool newBlock = false, bool emptyBlock = false) : base(blockSize, dataInstance, newBlock, emptyBlock)
+    public OverflowHashBlock(int blockFactor, T dataInstance, bool newBlock = false, bool emptyBlock = false) : base(blockFactor, dataInstance, newBlock, emptyBlock)
+    {
+    }
+
+    public OverflowHashBlock() : base()
     {
     }
 

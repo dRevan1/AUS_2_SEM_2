@@ -1,4 +1,5 @@
-﻿using SEM_2_CORE.Interfaces;
+﻿using SEM_2_CORE.Files;
+using SEM_2_CORE.Interfaces;
 
 namespace SEM_2_CORE;
 
@@ -12,17 +13,30 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public List<int> FreeBlocks { get; set; }
     public List<int> PartiallyFreeBlocks { get; set; }
 
-    public HeapFile(string filePath, int blockSize, T dataInstance)
+    public HeapFile(string filePath, int blockSize, T dataInstance, int startSize = 0, uint mode = 0)
     {
         FilePath = filePath;
         BlockSize = blockSize;
-        BlockFactor = (BlockSize - 4) / dataInstance.GetSize();  // 4 byty sú na valid count v bloku, takže až zvyšok je pre záznamy
+        int extraBlockBytes = 4;
+        if (mode == 1)
+        {
+            extraBlockBytes = 12;
+        }
+        else if (mode == 2)
+        {
+            extraBlockBytes = 8;
+        }
+        BlockFactor = (BlockSize - extraBlockBytes) / dataInstance.GetSize();  // 4 byty sú na valid count v bloku, takže až zvyšok je pre záznamy
         FreeBlocks = new List<int>();
         PartiallyFreeBlocks = new List<int>();
         Stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
-
-        int usedSpace = 4 + BlockFactor * dataInstance.GetSize();
+        int usedSpace = extraBlockBytes + BlockFactor * dataInstance.GetSize();
         PaddingSize = BlockSize - usedSpace;
+
+        if (startSize > 0)
+        {
+            InitializeFile(BlockFactor, dataInstance, startSize);
+        }
     }
 
     ~HeapFile()
@@ -55,6 +69,26 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
         FreeBlocks.RemoveAt(FreeBlocks.Count - 1);
         Stream.SetLength(firstFree * BlockSize);
+    }
+
+    private void InitializeFile(int blockFactor, T dataInstance, int startSize)
+    {
+        List<byte> buffer = new List<byte>();
+        PrimaryHashBlock<T> block = new PrimaryHashBlock<T>(blockFactor, dataInstance, emptyBlock: true);
+        byte[] finalBytes = new byte[BlockSize];
+        byte[] blockBytes = block.GetBytes();
+        byte[] padding = new byte[PaddingSize];
+        Buffer.BlockCopy(blockBytes, 0, finalBytes, 0, blockBytes.Length);
+        if (PaddingSize > 0)
+        {
+            Buffer.BlockCopy(padding, 0, finalBytes, blockBytes.Length, padding.Length);
+        }
+
+        for (int i = 0; i < startSize; i++)
+        {
+            buffer.AddRange(finalBytes);
+        }
+        Stream.Write(buffer.ToArray(), 0, buffer.Count);
     }
 
     private void WriteBlock(Block<T> block)  // už treba byť naseekovaný na správnom indexe
@@ -96,9 +130,12 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         return true;
     }
 
-    public Block<T> LoadBlockFromFile(T data, int index)
+    public Block LoadBlockFromFile<Block>(T data, int index) where Block : Block<T>, new()
     {
-        Block<T> block = new Block<T>(BlockFactor, data);
+        Block block = new Block();
+        block.DataInstance = data;
+        block.RecordsCount = BlockFactor;
+
         Stream.Seek(index * BlockSize, SeekOrigin.Begin);  // vytvorenie streamu a seekovanie na index, načítanie dát pre blok a naplnenie v inštancii
         byte[] blockBytes = new byte[BlockSize];
         Stream.ReadExactly(blockBytes, 0, BlockSize);
@@ -116,7 +153,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         if (PartiallyFreeBlocks.Count > 0)  // prioritné použitie častočne voľného bloku, potom voľného
         {
             index = PartiallyFreeBlocks[0];  // budeme pracovať s prvým v zozname
-            block = LoadBlockFromFile(data, PartiallyFreeBlocks[0]);
+            block = LoadBlockFromFile<Block<T>>(data, PartiallyFreeBlocks[0]);
             block.InsertRecord(data);
 
             if (block.ValidCount == BlockFactor)  // ak sa blok naplnil, odoberie sa zo zoznamu čiastočne voľných
@@ -127,7 +164,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         else if (FreeBlocks.Count > 0)
         {
             index = FreeBlocks[0];
-            block = LoadBlockFromFile(data, FreeBlocks[0]);
+            block = LoadBlockFromFile<Block<T>>(data, FreeBlocks[0]);
             block.InsertRecord(data);
 
             FreeBlocks.RemoveAt(0);  // automaticky po vložení už nie je voľný, medzi čiastočne voľné sa potom pridá iba ak je blokovací faktor > 1
@@ -141,7 +178,6 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         {
             block = new Block<T>(BlockFactor, data, true);
             index = (int)(Stream.Length / BlockSize);
-            Stream.SetLength(Stream.Length + BlockSize);
             Stream.Seek(index * BlockSize, SeekOrigin.Begin);
 
             if (BlockFactor > 1)  // ak je blokovací faktor 1, tak nový blok je automaticky plný, inak sa hneď pridá do zoznamu čiastočne voľných
@@ -166,7 +202,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             //Console.WriteLine($"No data at index {index}, the file is empty!");
             return default;
         }
-        Block<T> block = LoadBlockFromFile(data, index);  // načítanie bloku zo súboru
+        Block<T> block = LoadBlockFromFile<Block<T>>(data, index);  // načítanie bloku zo súboru
         result = TryToFindRecord(block, data);  // skúsi sa nájsť záznam v bloku
 
         if (result == null)
@@ -190,7 +226,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             return default;
         }
 
-        Block<T> block = LoadBlockFromFile(data, index);  // načítanie bloku zo súboru;
+        Block<T> block = LoadBlockFromFile<Block<T>>(data, index);  // načítanie bloku zo súboru;
         result = TryToFindRecord(block, data);  // skúsi sa nájsť záznam v bloku
 
         if (result == null)

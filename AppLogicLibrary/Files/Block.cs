@@ -4,19 +4,17 @@ namespace SEM_2_CORE;
 
 public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByteOperations
 {
-    public List<T> RecordsList { get; set; }
+    public List<T> RecordsList { get; set; } = new List<T>();
     public int RecordsCount { get; set; }
-    public int ValidCount { get; set; }
+    public int ValidCount { get; set; } = 0;
     public T DataInstance { get; set; }
 
-    public Block(int blockFactor, T instance, bool newBlock = false, bool emptyBlock = false)  // !!! neksôr potenciálne vymazať emptyBlock !!!!!!!
+    public Block(int blockFactor, T instance, bool newBlock = false, bool emptyBlock = false)
     {
         RecordsCount = blockFactor;
-        ValidCount = 0;
-        RecordsList = new List<T>();
         DataInstance = instance;
 
-        if (newBlock)
+        if (newBlock || emptyBlock)
         {
             ValidCount = emptyBlock ? 0 : 1;
             for (int i = 0; i < RecordsCount; i++)
@@ -24,6 +22,10 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
                 RecordsList.Add(DataInstance.CreateClass());  // keď sa insertuje nový blok, teda nenačíta sa zo súboru, tak sa naplní inštanciou toho záznamu, ktorý tam ide, použije sa pri inserte
             }
         }
+    }
+
+    public Block()
+    {
     }
 
     public override string ToString()
@@ -82,7 +84,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
             return true;
         }
 
-        Console.WriteLine($"Cannot insert record, block is full with valid count {ValidCount} and blocking factor {RecordsCount}");
+        //Console.WriteLine($"Cannot insert record, block is full with valid count {ValidCount} and blocking factor {RecordsCount}");
         return false;
     }
 
