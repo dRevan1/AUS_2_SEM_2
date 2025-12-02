@@ -43,6 +43,12 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     {
         Stream.Close();
     }
+
+    public int GetTotalSpace()
+    {
+        return (int)((Stream.Length / BlockSize) * BlockFactor);
+    }
+
     public void TruncateFile(T dataInstance)
     {
         if (Stream.Length > 0)

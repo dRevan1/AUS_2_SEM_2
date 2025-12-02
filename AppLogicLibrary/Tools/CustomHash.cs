@@ -10,18 +10,18 @@ public static class CustomHash
     public static int GetHashCode(string value)
     {
         using var sha = SHA256.Create();
-        byte[] byteArray = Encoding.UTF8.GetBytes(value);
-        byte[] hashBytes = sha.ComputeHash(byteArray);
-
-        return BitConverter.ToInt32(hashBytes, 0);
+        byte[] bytes = Encoding.UTF8.GetBytes(value);
+        byte[] hash = sha.ComputeHash(bytes);
+        int result = BitConverter.ToInt32(hash, 0) & 0x7FFFFFFF;
+        return result;
     }
 
     public static int GetHashCode(uint value)
     {
         using var sha = SHA256.Create();
-        byte[] byteArray = BitConverter.GetBytes(value);
-        byte[] hashBytes = sha.ComputeHash(byteArray);
-
-        return BitConverter.ToInt32(hashBytes, 0);
+        byte[] bytes = BitConverter.GetBytes(value);
+        byte[] hash = sha.ComputeHash(bytes);
+        int result = BitConverter.ToInt32(hash, 0) & 0x7FFFFFFF;
+        return result;
     }
 }

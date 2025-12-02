@@ -9,7 +9,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
     public HeapFile<T> PrimaryFile { get; private set; }
     public HeapFile<T> OverflowFile { get; private set; }
     private int TotalRecordsCount { get; set; } = 0;   // dočasne pre split podľa prednášky na testovanie a minimálnu hodnotu na benchmark
-    public int TotalSpace { get; private set; } = 0;
+    private int TotalSpace { get; set; } = 0;
 
 
     public LinearHashFile(int minMod, string primaryFilePath, string overflowFilePath, int primaryBlockSize, int overflowBlockSize, T dataInstance)
@@ -97,36 +97,36 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
             for (int i = 0; i < splitBlock.ValidCount; i++)  // prehešovanie záznamov v split bloku
             {
-                int index = GetRecordIndex(splitBlock.RecordsList[i]);
-                if (index == SplitPointer)
+                int index = splitBlock.RecordsList[i].GetHashCode();
+                index %= (ModFunction * 2);
+                if (index != SplitPointer)
                 {
-                    splitRecords.Add(splitBlock.RecordsList[i]);
+                    newRecords.Add(splitBlock.RecordsList[i]);
                 }
                 else
                 {
-                    newRecords.Add(splitBlock.RecordsList[i]);
+                    splitRecords.Add(splitBlock.RecordsList[i]);
                 }
             }
             splitBlock.ValidCount = 0;
 
-            int overflowBlocksCount = 0;
             if (splitBlock.NextBlockIndex != -1)   // ak má split blok preplňovacie bloky, ich záznamy sa tiež prehešujú a bloky sa načítajú
             {
                 overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, splitBlock.NextBlockIndex);
                 OverflowFile.FreeBlocks.Add(splitBlock.NextBlockIndex);
                 while (true)
                 {
-                    overflowBlocksCount++;
                     for (int i = 0; i < overflowBlock.ValidCount; i++)
                     {
-                        int index = GetRecordIndex(overflowBlock.RecordsList[i]);
-                        if (index == SplitPointer)
+                        int index = overflowBlock.RecordsList[i].GetHashCode();
+                        index %= (ModFunction * 2);
+                        if (index != SplitPointer)
                         {
-                            splitRecords.Add(overflowBlock.RecordsList[i]);
+                            newRecords.Add(overflowBlock.RecordsList[i]);
                         }
                         else
                         {
-                            newRecords.Add(overflowBlock.RecordsList[i]);
+                            splitRecords.Add(overflowBlock.RecordsList[i]);
                         }
                     }
                     if (overflowBlock.NextBlockIndex == -1)
@@ -141,16 +141,12 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
             splitBlock.TotalRecordsCount = (uint)splitRecords.Count;
             newBlock.TotalRecordsCount = (uint)newRecords.Count;
-
             CreateSequence(splitRecords, splitBlock, splitOverflowBlocks, record); // zo zoznamu dát, ktoré majú zostať na split bloku sa vytvorí zreťazenie blokov na zápis
             WriteSequence(splitOverflowBlocks, splitBlock, SplitPointer); // zápis zreťazenia pre split block - na ktorý ukazuje split pointer
-
             CreateSequence(newRecords, newBlock, newOverflowBlocks, record);  // zo zoznamu dát, ktoré majú byť na novom bloku sa vytvorí zreťazenie blokov na zápis
             WriteSequence(newOverflowBlocks, newBlock, SplitPointer + ModFunction, append: true);  // zapíše sa zreťazenie blokov pre nový block "newBlock"
-
             OverflowFile.TruncateFile(record);  // ak by zostali voľné bloky na konci tak sa skráti súbor
-            overflowBlocksCount = (splitOverflowBlocks.Count + newOverflowBlocks.Count) - overflowBlocksCount;
-            TotalSpace += overflowBlocksCount * OverflowFile.BlockFactor + PrimaryFile.BlockFactor;
+            TotalSpace = GetTotalSpace();
 
             if (SplitPointer + 1 == ModFunction)
             {
@@ -176,13 +172,17 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
     private int GetRecordIndex(T record)
     {
         int hash = record.GetHashCode();
-        uint uhash = (uint)hash;
-
-        int index = (uhash % (uint)ModFunction) < SplitPointer
-            ? (int)(uhash % (uint)(ModFunction * 2))
-            : (int)(uhash % (uint)ModFunction);
+        int primary = hash % ModFunction;
+        int index = primary < SplitPointer
+            ? hash % (ModFunction * 2)
+            : primary;
 
         return index;
+    }
+
+    public int GetTotalSpace()
+    {
+        return PrimaryFile.GetTotalSpace() + OverflowFile.GetTotalSpace();
     }
 
     public int Insert(T record)
@@ -253,7 +253,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
     {
         int index = GetRecordIndex(record);
 
-        if (PrimaryFile.CheckIndex(index))
+        if (!PrimaryFile.CheckIndex(index))
         {
             return default;
         }
@@ -275,9 +275,9 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             return foundRecord;
         }
 
-        while (overflowBlock.NextBlockIndex == -1)
+        while (overflowBlock.NextBlockIndex != -1)
         {
-            overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, primaryBlock.NextBlockIndex);  // prejdenie zreťazenia overflow blokov a pokus o nájdenie záznamu
+            overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);  // prejdenie zreťazenia overflow blokov a pokus o nájdenie záznamu
             foundRecord = OverflowFile.TryToFindRecord(overflowBlock, record);
 
             if (foundRecord != null)
@@ -285,7 +285,6 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                 return foundRecord;
             }
         }
-
         return foundRecord;  // v tomto bode bude return vždy null
     }
 

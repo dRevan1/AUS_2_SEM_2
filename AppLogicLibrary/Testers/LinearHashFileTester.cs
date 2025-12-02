@@ -36,13 +36,17 @@ public class LinearHashFileTester
     private int HashRecord(Person person)
     {
         int hash = person.GetHashCode();
-        uint uhash = (uint)hash;
-
-        int index = (uhash % (uint)Mod) < SplitPointer
-            ? (int)(uhash % (uint)(Mod * 2))
-            : (int)(uhash % (uint)Mod);
+        int primary = hash % Mod;
+        int index = primary < SplitPointer
+            ? hash % (Mod * 2)
+            : primary;
 
         return index;
+    }
+
+    private int GetTotalSpace()
+    {
+        return (PrimaryFile.Count * PrimaryBlockFactor) + (OverflowFile.Count * OverflowBlockFactor);
     }
 
     // kombinácia metód create a write sequence z linear hash file
@@ -149,7 +153,7 @@ public class LinearHashFileTester
     }
 
     // p1 je v testovacej štruktúre, p2 je zo súboru
-    private bool ComparePerson(Person? p1, Person? p2, int block, int record)  // na testovanie pre istotu porovnanie všetkých načítaných hodnôt
+    private bool ComparePerson(Person? p1, Person? p2, int block = -1, int record = -1, string customMsg = "")  // na testovanie pre istotu porovnanie všetkých načítaných hodnôt
     {
         if (p1 == null && p2 == null)
         {
@@ -168,7 +172,14 @@ public class LinearHashFileTester
 
         if (!result)
         {
-            Console.WriteLine($"Record mismatch at block {block}, record {record}:");
+            if (string.IsNullOrWhiteSpace(customMsg))
+            {
+                Console.WriteLine($"Record mismatch at block {block}, record {record}:");
+            }
+            else
+            {
+                Console.WriteLine(customMsg);
+            }
             Console.WriteLine($"Name inserted: {p1.Name}, Name from file: {p2.Name}");
             Console.WriteLine($"Surname inserted: {p1.Surname} , Surname from file:  {p2.Surname}");
             Console.WriteLine($"Day of birth inserted: {p1.DayOfBirth} , Day of birth from file:  {p2.DayOfBirth}");
@@ -238,7 +249,7 @@ public class LinearHashFileTester
             }
             for (int j = 0; j < PrimaryFile[i].ValidCount; j++)
             {
-                if (!ComparePerson(PrimaryFile[i].RecordsList[j], primaryFileContents[i].RecordsList[j], i, j))
+                if (!ComparePerson(PrimaryFile[i].RecordsList[j], primaryFileContents[i].RecordsList[j], block:i, record:j))
                 {
                     return false;
                 }
@@ -258,10 +269,33 @@ public class LinearHashFileTester
             }
             for (int j = 0; j < OverflowFile[i].ValidCount; j++)
             {
-                if (!ComparePerson(OverflowFile[i].RecordsList[j], overflowFileContents[i].RecordsList[j], i, j))
+                if (!ComparePerson(OverflowFile[i].RecordsList[j], overflowFileContents[i].RecordsList[j], block:i, record:j))
                 {
                     return false;
                 }
+            }
+        }
+
+        return true;
+    }
+
+    // kontorla výsledkov getov, index je index na ktorý bol záznam zahešovaný a expected je osoba, ktorá sa hľadala, actual osoba, ktorá sa našla
+    private bool CheckGetResults(List<(int, Person?, Person?)> successfulGetList, List<(int, Person?, Person?)> failedGetList)
+    {
+        foreach (var (index, expected, actual) in successfulGetList)
+        {
+            if (!ComparePerson(expected, actual, customMsg:"Linear hash file test failed at successful get:"))
+            {
+                return false;
+            }
+        }
+
+        foreach (var (index, expected, actual) in failedGetList)
+        {
+            if (actual != null)
+            {
+                Console.WriteLine($"Linear hash file test failed at unsuccessful get - expected null, got person with ID {actual.ID}");
+                return false;
             }
         }
 
@@ -286,19 +320,19 @@ public class LinearHashFileTester
 
             block = splitBlock;
             int index;
-            int overflowBlocksCount = 0;
             while (true)
             {
                 for (int i = 0; i < block.ValidCount; i++)
                 {
-                    int hash = HashRecord(block.RecordsList[i]);
-                    if (hash == SplitPointer)
+                    int hash = block.RecordsList[i].GetHashCode();
+                    hash %= (Mod * 2);
+                    if (hash != SplitPointer)
                     {
-                        splitRecords.Add(block.RecordsList[i]);
+                        newRecords.Add(block.RecordsList[i]);
                     }
                     else
                     {
-                        newRecords.Add(block.RecordsList[i]);
+                        splitRecords.Add(block.RecordsList[i]);
                     }
                 }
                 if (block.NextBlockIndex == -1)
@@ -308,7 +342,6 @@ public class LinearHashFileTester
                 index = block.NextBlockIndex;
                 block = OverflowFile[index];
                 FreeBlocks.Add(index);
-                overflowBlocksCount++;
             }
 
             splitBlock.ValidCount = 0;
@@ -318,9 +351,7 @@ public class LinearHashFileTester
             int splitOverflowBlocks = WriteSequence(splitRecords, splitBlock, record, SplitPointer);
             int newOverflowBlocks = WriteSequence(newRecords, newBlock, record, SplitPointer + Mod, append: true);
             TruncateFile();
-
-            overflowBlocksCount = (splitOverflowBlocks + newOverflowBlocks) - overflowBlocksCount;  // prepočítať aby brali aj truncate
-            TotalSpace += overflowBlocksCount * OverflowBlockFactor + PrimaryBlockFactor;
+            TotalSpace = GetTotalSpace();
 
             if (SplitPointer + 1 == Mod)
             {
@@ -343,60 +374,103 @@ public class LinearHashFileTester
         TotalSpace += PrimaryBlockFactor * linHashFile.ModFunction;
         Mod = linHashFile.ModFunction;
 
+        List<Person> insertedPeople = new List<Person>();
+        List<(int, Person?, Person?)> successfulGetList = new List<(int, Person?, Person?)>(); // zoznam hľadaní, ktoré vrátia osobu
+        List<(int, Person?, Person?)> failedGetList = new List<(int, Person?, Person?)>();  // zoznam hľadaní, ktoré osobu nenájdu - vrátia null
+
+
         for (int i = 0; i < Mod; i++)
         {
             PrimaryFile.Add(new PrimaryHashBlock<Person>(PrimaryBlockFactor, dataInstance, emptyBlock: true));
         }
 
+        Random rand = new Random();
         for (int i = 0; i < operations; i++)
         {
-            Person record = GeneratePerson(i);
+            double operationType = rand.NextDouble();
+            Person record = GeneratePerson(i), randomRecord;
             int index = HashRecord(record);
 
-            block = PrimaryFile[index];
-            block.TotalRecordsCount++;
-            if (!block.InsertRecord(record))
+            if (operationType < 0.5)  // INSERT
             {
-                if (block.NextBlockIndex != -1)
+                insertedPeople.Add(record);
+                block = PrimaryFile[index];
+                block.TotalRecordsCount++;
+                if (!block.InsertRecord(record))
                 {
-                    while (block.NextBlockIndex != -1)
+                    if (block.NextBlockIndex != -1)
                     {
-                        block = OverflowFile[block.NextBlockIndex];
-                        if (block.InsertRecord(record))
+                        while (block.NextBlockIndex != -1)
                         {
-                            break;
-                        }
-                        if (block.NextBlockIndex == -1)
-                        {
-                            PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
-                            block.NextBlockIndex = InsertBlock(newBlock);
-                            TotalSpace += OverflowBlockFactor;
-                            break;
+                            block = OverflowFile[block.NextBlockIndex];
+                            if (block.InsertRecord(record))
+                            {
+                                break;
+                            }
+                            if (block.NextBlockIndex == -1)
+                            {
+                                PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
+                                block.NextBlockIndex = InsertBlock(newBlock);
+                                TotalSpace += OverflowBlockFactor;
+                                break;
+                            }
                         }
                     }
+                    else
+                    {
+                        PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
+                        block.NextBlockIndex = InsertBlock(newBlock);
+                        TotalSpace += OverflowBlockFactor;
+                    }
                 }
-                else
+                TotalRecords++;
+                linHashFile.Insert(record);
+
+                if (SplitCondition())
                 {
-                    PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
-                    block.NextBlockIndex = InsertBlock(newBlock);
-                    TotalSpace += OverflowBlockFactor;
+                    Split(record);
                 }
             }
-            TotalRecords++;
-            linHashFile.Insert(record);
-
-            if (SplitCondition())
+            else   // GET
             {
-                Split(record);
+                double successfulGetChance = rand.NextDouble();
+                Person? foundPerson;
+
+                if (successfulGetChance < 0.5)  // úspešný GET
+                {
+                    if (insertedPeople.Count > 0)
+                    {
+                        randomRecord = insertedPeople[rand.Next(insertedPeople.Count)];
+                        index = HashRecord(randomRecord);
+                        foundPerson = linHashFile.Get(randomRecord);
+                        successfulGetList.Add((index, randomRecord, foundPerson));
+                    }
+                    else
+                    {
+                        foundPerson = linHashFile.Get(record);
+                        failedGetList.Add((index, record, foundPerson));
+                    }
+                }
+                else  // neúspešný GET
+                {
+                    foundPerson = linHashFile.Get(record);
+                    failedGetList.Add((index, record, foundPerson));
+                }
             }
         }
 
-        if (CheckFileContents(linHashFile))
+        if (!CheckFileContents(linHashFile) && CheckGetResults(successfulGetList, failedGetList))
         {
-            Console.WriteLine($"Linear hash file test passed with {operations} operations:");
-            Console.WriteLine($"Min mod - {linHashFile.ModFunction}");
-            Console.WriteLine($"Primary block factor - {linHashFile.PrimaryFile.BlockFactor}");
-            Console.WriteLine($"Overflow block factor - {linHashFile.OverflowFile.BlockFactor}");
+            Console.WriteLine("Check test failed");
+            return;
         }
+        if (!CheckGetResults(successfulGetList, failedGetList))
+        {
+            Console.WriteLine("Get test failed");
+            return;
+        }
+        Console.WriteLine($"Linear hash file test passed with {operations} operations:");
+        Console.WriteLine($"Primary block factor - {linHashFile.PrimaryFile.BlockFactor}");
+        Console.WriteLine($"Overflow block factor - {linHashFile.OverflowFile.BlockFactor}");
     }
 }
