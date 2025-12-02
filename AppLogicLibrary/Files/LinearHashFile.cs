@@ -4,12 +4,12 @@ namespace SEM_2_CORE.Files;
 
 public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperations
 {
-    public int ModFunction { get; set; }
-    public int SplitPointer { get; set; } = 0;
-    private HeapFile<T> PrimaryFile { get; set; }
-    private HeapFile<T> OverflowFile { get; set; }
+    public int ModFunction { get; private set; }
+    public int SplitPointer { get; private set; } = 0;
+    public HeapFile<T> PrimaryFile { get; private set; }
+    public HeapFile<T> OverflowFile { get; private set; }
     private int TotalRecordsCount { get; set; } = 0;   // dočasne pre split podľa prednášky na testovanie a minimálnu hodnotu na benchmark
-    private int TotalSpace { get; set; } = 0;
+    public int TotalSpace { get; private set; } = 0;
 
 
     public LinearHashFile(int minMod, string primaryFilePath, string overflowFilePath, int primaryBlockSize, int overflowBlockSize, T dataInstance)
@@ -75,7 +75,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
     private bool SplitCondition()
     {
-        return (TotalRecordsCount / TotalSpace) > 0.8;  // dočasne, aby sa dalo otestovať insert
+        return ((double)TotalRecordsCount / (double)TotalSpace) > 0.8;  // dočasne, aby sa dalo otestovať insert
     }
 
     private bool MergeCondition()
@@ -114,10 +114,9 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             {
                 overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, splitBlock.NextBlockIndex);
                 OverflowFile.FreeBlocks.Add(splitBlock.NextBlockIndex);
-                overflowBlocksCount++;
-
-                do
+                while (true)
                 {
+                    overflowBlocksCount++;
                     for (int i = 0; i < overflowBlock.ValidCount; i++)
                     {
                         int index = GetRecordIndex(overflowBlock.RecordsList[i]);
@@ -130,15 +129,16 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                             newRecords.Add(overflowBlock.RecordsList[i]);
                         }
                     }
-                    if (overflowBlock.NextBlockIndex != -1)
+                    if (overflowBlock.NextBlockIndex == -1)
                     {
-                        OverflowFile.FreeBlocks.Add(overflowBlock.NextBlockIndex);
-                        overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);
+                        break;
                     }
-                    overflowBlocksCount++;
-                } while (overflowBlock.NextBlockIndex != -1);
+                    OverflowFile.FreeBlocks.Add(overflowBlock.NextBlockIndex);
+                    overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);
+                }
                 OverflowFile.FreeBlocks.Sort();
             }
+
             splitBlock.TotalRecordsCount = (uint)splitRecords.Count;
             newBlock.TotalRecordsCount = (uint)newRecords.Count;
 
@@ -147,7 +147,8 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
             CreateSequence(newRecords, newBlock, newOverflowBlocks, record);  // zo zoznamu dát, ktoré majú byť na novom bloku sa vytvorí zreťazenie blokov na zápis
             WriteSequence(newOverflowBlocks, newBlock, SplitPointer + ModFunction, append: true);  // zapíše sa zreťazenie blokov pre nový block "newBlock"
-            
+
+            OverflowFile.TruncateFile(record);  // ak by zostali voľné bloky na konci tak sa skráti súbor
             overflowBlocksCount = (splitOverflowBlocks.Count + newOverflowBlocks.Count) - overflowBlocksCount;
             TotalSpace += overflowBlocksCount * OverflowFile.BlockFactor + PrimaryFile.BlockFactor;
 
@@ -211,7 +212,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             primaryBlock.TotalRecordsCount++;
             PrimaryFile.InsertAt(index, primaryBlock);
             TotalRecordsCount++;
-            TotalSpace += (OverflowFile.BlockFactor - 1);
+            TotalSpace += (OverflowFile.BlockFactor);
             if (SplitCondition())
             {
                 Split(record);
@@ -221,25 +222,21 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
         overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, primaryBlock.NextBlockIndex);
         nextBlockIndex = primaryBlock.NextBlockIndex;
-        do   // to isté, ale teraz cez zreťazenie overflow blokov -> hľadanie voľného miesta, prípadne sa spraví nový blok
+        // to isté, ale teraz cez zreťazenie overflow blokov -> hľadanie voľného miesta, prípadne sa spraví nový blok
+        while (!overflowBlock.InsertRecord(record))
         {
-            if (overflowBlock.InsertRecord(record))
-            {
-                OverflowFile.InsertAt(nextBlockIndex, overflowBlock);
-                break;
-            }
             if (overflowBlock.NextBlockIndex == -1)
             {
-                OverflowHashBlock<T> newOverflowBlock = new OverflowHashBlock<T>(OverflowFile.BlockFactor, record, true);
+                OverflowHashBlock<T> newOverflowBlock = new OverflowHashBlock<T>(OverflowFile.BlockFactor, record, newBlock: true);
                 int lastIndex = OverflowFile.InsertAt(-1, newOverflowBlock);
                 overflowBlock.NextBlockIndex = lastIndex;
-                OverflowFile.InsertAt(nextBlockIndex, overflowBlock);
-                TotalSpace += (OverflowFile.BlockFactor - 1);
+                TotalSpace += (OverflowFile.BlockFactor);
                 break;
             }
             nextBlockIndex = overflowBlock.NextBlockIndex;
             overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);
-        } while (overflowBlock.NextBlockIndex != -1);  // prejdenie zreťazenia overflow blokov až na koniec
+        }
+        OverflowFile.InsertAt(nextBlockIndex, overflowBlock);
         primaryBlock.TotalRecordsCount++;
         PrimaryFile.InsertAt(index, primaryBlock);
         TotalRecordsCount++;

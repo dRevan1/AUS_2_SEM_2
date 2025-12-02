@@ -5,10 +5,10 @@ namespace SEM_2_CORE;
 
 public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 {
-    public string FilePath { get; set; }
-    public int BlockSize { get; set; }
-    public int BlockFactor { get; set; }
-    public int PaddingSize { get; set; }
+    public string FilePath { get; private set; }
+    public int BlockSize { get; private set; }
+    public int BlockFactor { get; private set; }
+    public int PaddingSize { get; private set; }
     private FileStream Stream;
     public List<int> FreeBlocks { get; set; }
     public List<int> PartiallyFreeBlocks { get; set; }
@@ -43,8 +43,21 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     {
         Stream.Close();
     }
-    private void TruncateFile()
+    public void TruncateFile(T dataInstance)
     {
+        if (Stream.Length > 0)
+        {
+            Block<T> block = LoadBlockFromFile<Block<T>>(dataInstance, (int)(Stream.Length / BlockSize) - 1);
+            if (block.ValidCount != 0)
+            {
+                return;
+            }
+        }
+        else
+        {
+            return;
+        }
+
         FreeBlocks.Sort();
         int firstFree = FreeBlocks.Last();  // ak to bol posledný blok, tak sa iba skráti na length 0, inak toľko blokov, koľko je na konci voľných
         if (Stream.Length / BlockSize == 1)
@@ -130,6 +143,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         return true;
     }
 
+    // s generikom Blok aby to mohol byť rôzny typ bloku - napr. aj primary alebo overflow pre hash file
     public Block LoadBlockFromFile<Block>(T data, int index) where Block : Block<T>, new()
     {
         Block block = new Block();
@@ -255,7 +269,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         WriteBlock(block);
         if (index == Stream.Length / BlockSize - 1 && block.ValidCount == 0)  // ak sa vymazal posledný záznam v bloku a bol to posledný blok, tak sa súbor skráti
         {
-            TruncateFile();
+            TruncateFile(data);
         }
 
         return result;
@@ -266,9 +280,10 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         
     }
 
-    public List<Block<T>> GetFileContents(T dataInstance) 
+    // s generikom Blok aby to mohol byť zoznam rôzneho typu bloku - napr. aj primary alebo overflow pre hash file
+    public List<Block>GetFileContents<Block>(T dataInstance) where Block : Block<T>, new()
     {
-        List<Block<T>> blockList = new List<Block<T>>();
+        List<Block> blockList = new List<Block>();
 
         if (Stream.Length == 0)
         {
@@ -278,7 +293,9 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
         for (int i = 0; i < blockCount; i++)
         {
-            Block<T> block = new Block<T>(BlockFactor, dataInstance);
+            Block block = new Block();
+            block.DataInstance = dataInstance;
+            block.RecordsCount = BlockFactor;
             Stream.Seek(i * BlockSize, SeekOrigin.Begin);
             byte[] blockBytes = new byte[BlockSize];
             Stream.ReadExactly(blockBytes, 0, BlockSize);
@@ -308,10 +325,10 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
                 Stream.SetLength(Stream.Length + BlockSize);
                 index = (int)(Stream.Length / BlockSize) - 1;
             }
-            Stream.Seek(index * BlockSize, SeekOrigin.Begin);
         }
-
+        Stream.Seek(index * BlockSize, SeekOrigin.Begin);
         WriteBlock(block);
+
         return index;
     }
 }

@@ -58,7 +58,7 @@ public class HeapFileTester
         Person dataInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
         HeapFile<Person> heapFile = new HeapFile<Person>(filePath, blockSize, dataInstance);
         List<List<Person>> insertedBlocksRecord = InsertData(heapFile, insertCount);  // naplní sa file, zatvorí a vráti sa zoznam na kontrolu
-        List<Block<Person>> insertedBlocksActual = heapFile.GetFileContents(dataInstance);
+        List<Block<Person>> insertedBlocksActual = heapFile.GetFileContents<Block<Person>>(dataInstance);
 
         if (insertedBlocksActual.Count != insertedBlocksRecord.Count)
         {
@@ -227,7 +227,7 @@ public class HeapFileTester
             }
         }
 
-        List<Block<Person>> blocksAfterDelete = heapFile.GetFileContents(dataInstance);
+        List<Block<Person>> blocksAfterDelete = heapFile.GetFileContents<Block<Person>>(dataInstance);
         if (blocksAfterDelete.Count != insertedBlocksRecord.Count)
         {
             Console.WriteLine($"Delete test failed - block counts are not equal after delete - record {insertedBlocksRecord.Count}, actual in file {blocksAfterDelete.Count}.");
@@ -510,7 +510,7 @@ public class HeapFileTester
         }
 
         // kontrola blokov
-        List<Block<Person>> blocksAfterOperations = heapFile.GetFileContents(dataInstance);
+        List<Block<Person>> blocksAfterOperations = heapFile.GetFileContents<Block<Person>>(dataInstance);
         if (blocksAfterOperations.Count != blocksRecord.Count)
         {
             Console.WriteLine($"Heap file test failed - block counts are not equal after delete - record {blocksRecord.Count}, actual in file {blocksAfterOperations.Count}.");

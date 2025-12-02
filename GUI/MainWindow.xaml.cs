@@ -30,7 +30,7 @@ namespace GUI
             Person dataInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
             for (int i = 0; i < HeapFile.Count; i++)
             {
-                PersonFileContent contentWindow = new PersonFileContent(HeapFile[i], HeapFile[i].GetFileContents(dataInstance));
+                PersonFileContent contentWindow = new PersonFileContent(HeapFile[i], HeapFile[i].GetFileContents<Block<Person>>(dataInstance));
                 contentWindow.Show();
             }
         }
