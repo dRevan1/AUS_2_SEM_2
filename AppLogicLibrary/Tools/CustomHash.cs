@@ -1,6 +1,5 @@
 ﻿namespace SEM_2_CORE.Tools;
 
-using System.Runtime.Intrinsics.Arm;
 using System.Security.Cryptography;
 using System.Text;
 

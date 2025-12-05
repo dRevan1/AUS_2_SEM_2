@@ -1,4 +1,5 @@
 ﻿using SEM_2_CORE;
+using SEM_2_CORE.Interfaces;
 using System.Windows;
 
 namespace GUI
@@ -6,24 +7,22 @@ namespace GUI
     /// <summary>
     /// Interaction logic for PersonFileContent.xaml
     /// </summary>
-    public partial class PersonFileContent : Window
+    public partial class FileContent : Window
     {
         public List<BlockViewData> Blocks { get; set; } = new List<BlockViewData>();
         public string Path { get; set; } = "";
         public int BlockSize { get; set; } = 0;
         public int BlockFactor { get; set; } = 0;
         public int BlockCount { get; set; } = 0;
-        public PersonFileContent(HeapFile<Person> heapFile, List<Block<Person>> blocks)
+        public FileContent(List<BlockViewData> blocks, string path, int blockSize, int blockFactor, int blockCount)
         {
             InitializeComponent();
-            for (int i = 0; i < blocks.Count; i++)
-            {
-                Blocks.Add(new BlockViewData(i, blocks[i].RecordsCount, blocks[i].ValidCount, blocks[i].ToString()));
-            }
-            Path = heapFile.FilePath;
-            BlockSize = heapFile.BlockSize;
-            BlockFactor = heapFile.BlockFactor;
-            BlockCount = Blocks.Count;
+
+            Blocks = blocks;
+            Path = path;
+            BlockSize = blockSize;
+            BlockFactor = blockFactor;
+            BlockCount = blockCount;
             DataContext = this;
         }
     }

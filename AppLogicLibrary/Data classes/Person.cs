@@ -14,6 +14,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
     public byte MonthOfBirth { get; set; }
     public ushort YearOfBirth { get; set; }
     public string ID { get; set; }
+    public uint[] tests { get; set; } = new uint[6];
 
     public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id)
     {

@@ -8,8 +8,10 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
     public int SplitPointer { get; private set; } = 0;
     public HeapFile<T> PrimaryFile { get; private set; }
     public HeapFile<T> OverflowFile { get; private set; }
-    private int TotalRecordsCount { get; set; } = 0;   // dočasne pre split podľa prednášky na testovanie a minimálnu hodnotu na benchmark
-    private int TotalSpace { get; set; } = 0;
+    public int TotalRecordsCount { get; private set; } = 0;   // dočasne pre split podľa prednášky na testovanie a minimálnu hodnotu na benchmark
+    public int TotalSpace { get; private set; } = 0;
+    public int TotalChainLength { get; private set; } = 0;
+    public int UsedPrimaryBlocks { get; private set; } = 0;  // všetky použité primárne bloky - na priemer pri split condition
 
 
     public LinearHashFile(int minMod, string primaryFilePath, string overflowFilePath, int primaryBlockSize, int overflowBlockSize, T dataInstance)
@@ -75,7 +77,19 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
     private bool SplitCondition()
     {
-        return ((double)TotalRecordsCount / (double)TotalSpace) > 0.8;  // dočasne, aby sa dalo otestovať insert
+        double loadFactor = (double)TotalRecordsCount / (double)TotalSpace;
+        double averageChainLength = (double)TotalChainLength / (double)UsedPrimaryBlocks;
+
+        if (loadFactor > 0.88)
+        {
+            return true;
+        }
+        else if (averageChainLength > 0.82)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private bool MergeCondition()
@@ -116,6 +130,7 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                 OverflowFile.FreeBlocks.Add(splitBlock.NextBlockIndex);
                 while (true)
                 {
+                    TotalChainLength--;
                     for (int i = 0; i < overflowBlock.ValidCount; i++)
                     {
                         int index = overflowBlock.RecordsList[i].GetHashCode();
@@ -147,6 +162,11 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             WriteSequence(newOverflowBlocks, newBlock, SplitPointer + ModFunction, append: true);  // zapíše sa zreťazenie blokov pre nový block "newBlock"
             OverflowFile.TruncateFile(record);  // ak by zostali voľné bloky na konci tak sa skráti súbor
             TotalSpace = GetTotalSpace();
+            TotalChainLength += (splitOverflowBlocks.Count + newOverflowBlocks.Count);
+            if (splitBlock.TotalRecordsCount > 0 && newBlock.TotalRecordsCount > 0) // ak sa záznamy rozdelili do oboch hlavných blokov - použité sa zvýšia o 1
+            {
+                UsedPrimaryBlocks++;
+            }
 
             if (SplitPointer + 1 == ModFunction)
             {
@@ -196,6 +216,10 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         if (primaryBlock.InsertRecord(record))  // ak sa záznam vložil do bloku - je tam voľné miesto, inak je false a ide sa na overflow bloky
         {
             primaryBlock.TotalRecordsCount++;
+            if (primaryBlock.TotalRecordsCount == 1)   // ak sa pridal prvý záznam do bloku tak sa zvýši o 1
+            {
+                UsedPrimaryBlocks++;
+            }
             PrimaryFile.InsertAt(index, primaryBlock);
             TotalRecordsCount++;
             if (SplitCondition())
@@ -212,7 +236,8 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             primaryBlock.TotalRecordsCount++;
             PrimaryFile.InsertAt(index, primaryBlock);
             TotalRecordsCount++;
-            TotalSpace += (OverflowFile.BlockFactor);
+            TotalSpace += OverflowFile.BlockFactor;
+            TotalChainLength += 1;
             if (SplitCondition())
             {
                 Split(record);
@@ -230,7 +255,8 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                 OverflowHashBlock<T> newOverflowBlock = new OverflowHashBlock<T>(OverflowFile.BlockFactor, record, newBlock: true);
                 int lastIndex = OverflowFile.InsertAt(-1, newOverflowBlock);
                 overflowBlock.NextBlockIndex = lastIndex;
-                TotalSpace += (OverflowFile.BlockFactor);
+                TotalSpace += OverflowFile.BlockFactor;
+                TotalChainLength += 1;
                 break;
             }
             nextBlockIndex = overflowBlock.NextBlockIndex;
@@ -288,13 +314,15 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         return foundRecord;  // v tomto bode bude return vždy null
     }
 
-    public void Update(T record)
+    public int Update(T record)
     {
         T? findRecord = Get(record);
         if (findRecord == null)
         {
-            return;
+            return -1;
         }
+
+        return 0;
     }
 
     public int Delete(T record)

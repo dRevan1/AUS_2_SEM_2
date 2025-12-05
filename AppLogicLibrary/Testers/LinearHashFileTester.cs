@@ -14,6 +14,8 @@ public class LinearHashFileTester
     private int TotalRecords = 0;
     private int PrimaryBlockFactor = 0;
     private int OverflowBlockFactor = 0;
+    private int TotalChainLength = 0;
+    private int UsedPrimaryBlocks = 0;
 
     private DateTime RandomDate(DateTime start, DateTime end)
     {
@@ -204,6 +206,16 @@ public class LinearHashFileTester
             Console.WriteLine($"Linear hash file test failed - expected split pointer: {SplitPointer}, split pointer in file: {linHashFile.SplitPointer}");
             return false;
         }
+        if (linHashFile.TotalChainLength != TotalChainLength)
+        {
+            Console.WriteLine($"Linear hash file test failed - expected total chain length: {TotalChainLength}, total chain length in file: {linHashFile.TotalChainLength}");
+            return false;
+        }
+        if (linHashFile.UsedPrimaryBlocks != UsedPrimaryBlocks)
+        {
+            Console.WriteLine($"Linear hash file test failed - expected used primary blocks count: {UsedPrimaryBlocks}, used primary blocks count in file: {linHashFile.UsedPrimaryBlocks}");
+            return false;
+        }
         if (linHashFile.OverflowFile.FreeBlocks.Count != FreeBlocks.Count)  // kontrola počet voľných blokov a následne jednotlivé indexy voľných blokov
         {
             Console.WriteLine($"Linear hash file test failed - free blocks count: {FreeBlocks.Count}, free blocks count in file: {linHashFile.OverflowFile.FreeBlocks.Count}");
@@ -279,6 +291,14 @@ public class LinearHashFileTester
         return true;
     }
 
+    private void GetBenchmark(LinearHashFile<Person> linHashFile)
+    {
+        Console.WriteLine($"Average chain length: {(double)linHashFile.TotalChainLength / (double)linHashFile.UsedPrimaryBlocks}");
+        Console.WriteLine($"Total chain length: {linHashFile.TotalChainLength}");
+        Console.WriteLine($"Used primary blocks count: {linHashFile.UsedPrimaryBlocks}");
+        Console.WriteLine($"Used space ratio/total space ratio: {(double)linHashFile.TotalRecordsCount / (double)linHashFile.TotalSpace}");
+    }
+
     // kontorla výsledkov getov, index je index na ktorý bol záznam zahešovaný a expected je osoba, ktorá sa hľadala, actual osoba, ktorá sa našla
     private bool CheckGetResults(List<(int, Person?, Person?)> successfulGetList, List<(int, Person?, Person?)> failedGetList)
     {
@@ -305,7 +325,19 @@ public class LinearHashFileTester
 
     private bool SplitCondition()
     {
-        return ((double)TotalRecords / (double)TotalSpace) > 0.8;
+        double loadFactor = (double)TotalRecords / (double)TotalSpace;
+        double averageChainLength = (double)TotalChainLength / (double)UsedPrimaryBlocks;
+
+        if (loadFactor > 0.88)
+        {
+            return true;
+        }
+        else if (averageChainLength > 0.82)
+        {
+            return true;
+        }
+
+        return false;
     }
 
     private void Split(Person record)
@@ -341,6 +373,7 @@ public class LinearHashFileTester
                 }
                 index = block.NextBlockIndex;
                 block = OverflowFile[index];
+                TotalChainLength--;
                 FreeBlocks.Add(index);
             }
 
@@ -352,6 +385,11 @@ public class LinearHashFileTester
             int newOverflowBlocks = WriteSequence(newRecords, newBlock, record, SplitPointer + Mod, append: true);
             TruncateFile();
             TotalSpace = GetTotalSpace();
+            TotalChainLength += (splitOverflowBlocks + newOverflowBlocks);
+            if (splitBlock.TotalRecordsCount > 0 && newBlock.TotalRecordsCount > 0)
+            {
+                UsedPrimaryBlocks++;
+            }
 
             if (SplitPointer + 1 == Mod)
             {
@@ -412,6 +450,7 @@ public class LinearHashFileTester
                                 PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
                                 block.NextBlockIndex = InsertBlock(newBlock);
                                 TotalSpace += OverflowBlockFactor;
+                                TotalChainLength++;
                                 break;
                             }
                         }
@@ -421,7 +460,12 @@ public class LinearHashFileTester
                         PrimaryHashBlock<Person> newBlock = new PrimaryHashBlock<Person>(OverflowBlockFactor, record, newBlock: true);
                         block.NextBlockIndex = InsertBlock(newBlock);
                         TotalSpace += OverflowBlockFactor;
+                        TotalChainLength++;
                     }
+                }
+                else if (block.TotalRecordsCount == 1)  // ak sa záznam vložil do bloku a je to jeho prvý záznam - počet použitých blokov +1
+                {
+                    UsedPrimaryBlocks++;
                 }
                 TotalRecords++;
                 linHashFile.Insert(record);
@@ -472,5 +516,7 @@ public class LinearHashFileTester
         Console.WriteLine($"Linear hash file test passed with {operations} operations:");
         Console.WriteLine($"Primary block factor - {linHashFile.PrimaryFile.BlockFactor}");
         Console.WriteLine($"Overflow block factor - {linHashFile.OverflowFile.BlockFactor}");
+
+        GetBenchmark(linHashFile);
     }
 }
