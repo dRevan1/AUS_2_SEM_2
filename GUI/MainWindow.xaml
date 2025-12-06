@@ -5,7 +5,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:local="clr-namespace:GUI"
     mc:Ignorable="d"
-    Title="MainWindow" Height="870" Width="800">
+    Title="Main window" Height="870" Width="800">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid>
             <Grid.RowDefinitions>
@@ -20,7 +20,23 @@
                 </Grid.ColumnDefinitions>
                 <StackPanel Grid.Column="0" Orientation="Vertical" Margin="0,0,0,5">
                     <Button Content="Populate" Click="PopulateBtn_Click" Width="auto" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                    <Button Content="View binary file(s)" Click="ViewContentBtn_Click" Width="auto" Height="30" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="View binary file(s)" Click="ViewContentBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="Create database" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="Load database" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#1 Insert PCR test" Click="InsertTestBtn_Click" Width="auto" Height="30" Margin="0,25,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#2 Find person" Click="FindPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#3 Find PCR test" Click="FindTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#4 Insert person" Click="InsertPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#5 Delete PCR test" Click="DeleteTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#6 Delete person" Click="DeletePersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#7 Edit person" Click="EditPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                    <Button Content="#8 Edit PCR test" Click="EditTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
+                </StackPanel>
+                <StackPanel Grid.Column="1" Orientation="Vertical" Margin="4,0,0,5">
+                    <TextBlock Text="Person/test ID:" Margin="5" FontWeight="Bold"/>
+                </StackPanel>
+                <StackPanel Grid.Column="2" Orientation="Vertical" Margin="4,0,0,5">
+                    <TextBox Name="ID" Height="23" Width="200" Margin="3"/>
                 </StackPanel>
             </Grid>
         </Grid>

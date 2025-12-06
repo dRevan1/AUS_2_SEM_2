@@ -14,7 +14,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
     public byte MonthOfBirth { get; set; }
     public ushort YearOfBirth { get; set; }
     public string ID { get; set; }
-    public uint[] tests { get; set; } = new uint[6];
+    public uint[] Tests { get; set; } = new uint[6];
 
     public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id)
     {
@@ -28,12 +28,41 @@ public class Person : IDataClassOperations<Person>, IByteOperations
 
     public override string ToString()
     {
-        return $"Name: {Name}\nSurname: {Surname}\nDate of Birth: {DayOfBirth}.{MonthOfBirth}.{YearOfBirth}\nID: {ID}\n";
+        string output = $"Name: {Name}\nSurname: {Surname}\nDate of Birth: {DayOfBirth}.{MonthOfBirth}.{YearOfBirth}\nID: {ID}\n";
+        for (int i = 0; i < Tests.Length; i++)
+        {
+            output += $"Test {i+1} ID: {Tests[i]}\n";
+        }
+        return output;
     }
 
     public override int GetHashCode()
     {
         return CustomHash.GetHashCode(ID);
+    }
+
+    public void AddTest(uint testID)
+    {
+        for (int i = 0; i < Tests.Length; i++)
+        {
+            if (Tests[i] == 0)
+            {
+                Tests[i] = testID;
+                break;
+            }
+        }
+    }
+
+    public void RemoveTest(uint testID)
+    {
+        for (int i = 0;i < Tests.Length; i++)
+        {
+            if (Tests[i] == testID)
+            {
+                Tests[i] = 0;
+                break;
+            }
+        }
     }
 
     public bool Equals(Person other)
@@ -46,12 +75,13 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         return new Person(Name, Surname, DayOfBirth, MonthOfBirth, YearOfBirth, ID);
     }
 
-    public int GetSize()  // teraz je to 85 bytov
+    public int GetSize()  // teraz je to 109 bytov
     {
         int size = 1 + (sizeof(char) * NameLength); // meno (name) má max 15 znakov + 1 byte pre počet platných typu byte, to nám stačí na max 15 hodnotu
         size += 1 + (sizeof(char) * SurnameLength); // priezvisko (surname) má max 14 znakov + 1 byte -||-
         size += 2 + sizeof(ushort); // pre dátum je 1 byte pre deň a mesiac + ushort veľkosť pre rok
         size += 1 + (sizeof(char) * IDLength); // ID je max 10 znakov + 1 byte
+        size += 6 * (sizeof(uint)); // Id testov 1-6
         return size;
     }
 
@@ -72,8 +102,12 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         byteBuffer.AddRange(BitConverter.GetBytes(YearOfBirth)); // dátum narodenia
 
         byteBuffer.Add(StringConverter.GetValidChars(ID));
-        byteBuffer.AddRange(StringConverter.StringToBytes(ID));  // meno + valid count
+        byteBuffer.AddRange(StringConverter.StringToBytes(ID));  // ID a valid count
 
+        for (int i = 0; i < Tests.Length; i++)
+        {
+            byteBuffer.AddRange(BitConverter.GetBytes(Tests[i]));   // index jednotlivých testov - ID 0 znamená žiadny test
+        }
         byte[] bytes = byteBuffer.ToArray();
 
         return bytes;
@@ -104,6 +138,13 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         validChars = bytes[position];
         position++;
         charBytes = bytes.AsSpan(position, IDLength * 2).ToArray();
-        ID = StringConverter.StringFromBytes(charBytes, validChars); // doplníme ID nakoniec
+        ID = StringConverter.StringFromBytes(charBytes, validChars); // ID
+        position += (IDLength * 2);
+
+        for (int i = 0; i < Tests.Length; i++)   // ID testov
+        {
+            Tests[i] = BitConverter.ToUInt32(bytes.AsSpan(position, 4));
+            position += 4;
+        }
     }
 }

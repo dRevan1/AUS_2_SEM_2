@@ -13,6 +13,13 @@ public class OverflowHashBlock<T> : Block<T> where T : IDataClassOperations<T>, 
     {
     }
 
+    public override string ToString()
+    {
+        string _string = $"Next block: {NextBlockIndex}\n";
+        _string += base.ToString();
+        return _string;
+    }
+
     public override int GetSize()
     {
         return base.GetSize() + sizeof(int);  // pridáme veľkosť jedného intu pre index do ďalšieho bloku zo zreťazenia

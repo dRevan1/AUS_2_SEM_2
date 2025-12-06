@@ -1,7 +1,5 @@
-﻿using SEM_2_CORE.Data_classes;
-using SEM_2_CORE.Files;
+﻿using SEM_2_CORE.Files;
 using SEM_2_CORE.Interfaces;
-using System;
 
 namespace SEM_2_CORE.App;
 
@@ -19,24 +17,24 @@ public class PCRTestDatabase
         pcrTestFile = new LinearHashFile<PCRTest>(pcrMinMod, pcrPPath, pcrOPath, pcrPBlcSize, pcrOBlcSize, testDataInstance);
     }
 
-    private List<string> GetPatientsTests(Person person)
+    private List<PCRTest> GetPatientsTests(Person person)
     {
-        List<string> testsStrings = new List<string>();
-        for (int i = 0; i < person.tests.Length; i++)
+        List<PCRTest> tests = new List<PCRTest>();
+        for (int i = 0; i < person.Tests.Length; i++)
         {
-            if (person.tests[i] == 0)
+            if (person.Tests[i] == 0)
             {
                 break;
             }
-            testDataInstance.ID = person.tests[i];
+            testDataInstance.ID = person.Tests[i];
             PCRTest? test = pcrTestFile.Get(testDataInstance);
             if (test != null)
             {
-                testsStrings.Add(test.ToString());
+                tests.Add(test.CreateClass());
             }
         }
 
-        return testsStrings;
+        return tests;
     }
 
     // na výpis obsahu konkrétneho heap súboru - vráti zoznam popisu blokov rôzneho typu - primary, overflow
@@ -70,15 +68,15 @@ public class PCRTestDatabase
     }
     
     // # 2 - Vyhľadanie osoby + jej testy
-    public Person? GetPerson(string id, out List<string> testsStrings)
+    public Person? GetPerson(string id, out List<PCRTest> tests)
     {
         personDataInstance.ID = id;
         Person? person = peopleFile.Get(personDataInstance);
-        testsStrings = new List<string>();
+        tests = new List<PCRTest>();
 
         if (person != null)
         {
-            testsStrings = GetPatientsTests(person.CreateClass());
+            tests = GetPatientsTests(person.CreateClass());
         }
 
         return person;

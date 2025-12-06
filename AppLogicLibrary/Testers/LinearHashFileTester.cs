@@ -161,16 +161,33 @@ public class LinearHashFileTester
         {
             return true;
         }
-        if (p1 == null || p2 == null)
+        if (p1 == null && p2 != null)
         {
+            Console.WriteLine($"Record mismatch at block {block}, record {record}:");
+            Console.WriteLine($"Expected null record, got record with ID {p2.ID}");
             return false;
         }
+        if (p1 != null && p2 == null)
+        {
+            Console.WriteLine($"Record mismatch at block {block}, record {record}:");
+            Console.WriteLine($"Expected record with ID {p1.ID}, got null record");
+            return false;
+        }
+
         bool result = p1.Name == p2.Name &&
                p1.Surname == p2.Surname &&
                p1.DayOfBirth == p2.DayOfBirth &&
                p1.MonthOfBirth == p2.MonthOfBirth &&
                p1.YearOfBirth == p2.YearOfBirth &&
                p1.ID == p2.ID;
+        for (int i = 0; i < p1.Tests.Length; i++)
+        {
+            if (p1.Tests[i] != p2.Tests[i])
+            {
+                result = false;
+                break;
+            }
+        }
 
         if (!result)
         {
@@ -188,6 +205,10 @@ public class LinearHashFileTester
             Console.WriteLine($"Month of birth inserted: {p1.MonthOfBirth} , Month of birth from file:  {p2.MonthOfBirth}");
             Console.WriteLine($"Year of birth inserted: {p1.YearOfBirth} , Year of birth from file:  {p2.YearOfBirth}");
             Console.WriteLine($"ID inserted: {p1.ID} , ID from file:  {p2.ID}");
+            for (int i = 0; i < p1.Tests.Length; i++)
+            {
+                Console.WriteLine($"Test {i+1} ID inserted: {p1.Tests[i]}, test {i+1} ID from file: {p2.Tests[i]}");
+            }
         }
 
         return result;
@@ -505,15 +526,14 @@ public class LinearHashFileTester
 
         if (!CheckFileContents(linHashFile) && CheckGetResults(successfulGetList, failedGetList))
         {
-            Console.WriteLine("Check test failed");
+            Console.WriteLine("Check file contents test failed");
             return;
         }
         if (!CheckGetResults(successfulGetList, failedGetList))
         {
-            Console.WriteLine("Get test failed");
             return;
         }
-        Console.WriteLine($"Linear hash file test passed with {operations} operations:");
+        Console.WriteLine($"Linear hash file test PASSED with {operations} operations:");
         Console.WriteLine($"Primary block factor - {linHashFile.PrimaryFile.BlockFactor}");
         Console.WriteLine($"Overflow block factor - {linHashFile.OverflowFile.BlockFactor}");
 

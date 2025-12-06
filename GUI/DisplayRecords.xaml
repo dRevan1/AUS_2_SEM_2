@@ -1,0 +1,120 @@
+﻿<Window x:Class="GUI.DisplayRecords"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:GUI"
+        xmlns:models="clr-namespace:SEM_2_CORE;assembly=SEM_2_CORE" 
+        mc:Ignorable="d"
+        Title="{Binding WindowTitle}" Height="450" Width="800">
+    <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto" MinHeight="34"/>
+                <RowDefinition Height="Auto" MinHeight="34"/>
+                <RowDefinition Height="Auto" MinHeight="34"/>
+                <RowDefinition Height="Auto" MinHeight="34"/>
+            </Grid.RowDefinitions>
+
+            <TextBlock Grid.Row="0">
+                <Run Text="Person: " FontWeight="Bold"/>
+            </TextBlock>
+            <ListBox x:Name="Person" Grid.Row="1" ItemsSource="{Binding People}" Grid.ColumnSpan="1" Margin="5,3" VerticalAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:Person}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0">
+                                <Run Text="Name: " FontWeight="Bold"/><Run Text="{Binding Name}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="1">
+                                <Run Text="Surname: " FontWeight="Bold"/><Run Text="{Binding Surname}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="2">
+                                <Run Text="Date of birth: " FontWeight="Bold"/><Run Text="{Binding DayOfBirth}"/><Run Text="."/><Run Text="{Binding MonthOfBirth}"/><Run Text="."/><Run Text="{Binding YearOfBirth}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="3">
+                                <Run Text="ID: " FontWeight="Bold"/><Run Text="{Binding ID}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="4">
+                                <Run Text="Test 1: " FontWeight="Bold"/><Run Text="{Binding Tests[0]}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="5">
+                                <Run Text="Test 2: " FontWeight="Bold"/><Run Text="{Binding Tests[1]}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="6">
+                                <Run Text="Test 3: " FontWeight="Bold"/><Run Text="{Binding Tests[2]}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="7">
+                                <Run Text="Test 4: " FontWeight="Bold"/><Run Text="{Binding Tests[3]}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="8">
+                                <Run Text="Test 5: " FontWeight="Bold"/><Run Text="{Binding Tests[4]}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="9">
+                                <Run Text="Test 6: " FontWeight="Bold"/><Run Text="{Binding Tests[5]}"/>
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+            <TextBlock Grid.Row="2">
+                <Run Text="Number of tests: " FontWeight="Bold"/><Run Text="{Binding TestCount}"/>
+            </TextBlock>
+            <ListBox x:Name="Test" Grid.Row="3" ItemsSource="{Binding Tests}" Grid.ColumnSpan="1" Margin="5,3" VerticalAlignment="Stretch">
+                <ListBox.ItemTemplate>
+                    <DataTemplate DataType="{x:Type models:PCRTest}">
+                        <Grid>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+
+                            <TextBlock Grid.Row="0">
+                                <Run Text="Test date: " FontWeight="Bold"/><Run Text="{Binding DayOfTest}"/><Run Text="."/><Run Text="{Binding MonthOfTest}"/><Run Text="."/><Run Text="{Binding YearOfTest}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="1">
+                                <Run Text="Test time: " FontWeight="Bold"/><Run Text="{Binding HourOfTest}"/><Run Text=":"/><Run Text="{Binding MinuteOfTest}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="2">
+                                <Run Text="Person ID: " FontWeight="Bold"/><Run Text="{Binding PersonID}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="3">
+                                <Run Text="Test ID: " FontWeight="Bold"/><Run Text="{Binding ID}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="4">
+                                <Run Text="Is positive: " FontWeight="Bold"/><Run Text="{Binding Result}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="5">
+                                <Run Text="Test value: " FontWeight="Bold"/><Run Text="{Binding TestValue}"/>
+                            </TextBlock>
+                            <TextBlock Grid.Row="6">
+                                <Run Text="Note: " FontWeight="Bold"/><Run Text="{Binding Note}"/>
+                            </TextBlock>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Grid>
+    </ScrollViewer>
+</Window>

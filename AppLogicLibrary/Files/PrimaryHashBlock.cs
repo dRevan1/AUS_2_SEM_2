@@ -13,6 +13,13 @@ public class PrimaryHashBlock<T> : Block<T> where T : IDataClassOperations<T>, I
     {
     }
 
+    public override string ToString()
+    {
+        string _string = $"Total records count: {TotalRecordsCount}\nNext block: {NextBlockIndex}\n";
+        _string += base.ToString();
+        return _string;
+    }
+
     public override int GetSize()
     {
         return base.GetSize() + sizeof(int) + sizeof(uint);  // pridáme 2 int size pre index zreťazenia na prvý preplňovací blok a celkový počet záznamov aj v preplňovacom súbore

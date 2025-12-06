@@ -1,7 +1,7 @@
 ﻿using SEM_2_CORE.Interfaces;
 using SEM_2_CORE.Tools;
 
-namespace SEM_2_CORE.Data_classes;
+namespace SEM_2_CORE;
 
 public class PCRTest : IDataClassOperations<PCRTest>, IByteOperations
 {

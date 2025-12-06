@@ -30,7 +30,7 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
 
     public override string ToString()
     {
-        string result = "";
+        string result = "--------------------\n";
         for (int i = 0; i < RecordsCount; i++)
         {
             result += $"Record {i + 1}:\n";
@@ -86,6 +86,18 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
 
         //Console.WriteLine($"Cannot insert record, block is full with valid count {ValidCount} and blocking factor {RecordsCount}");
         return false;
+    }
+
+    public void UpdateRecord(T record)
+    {
+        for (int i = 0; i < ValidCount; i++)
+        {
+            if (RecordsList[i].Equals(record))
+            {
+                RecordsList[i] = record.CreateClass();
+            }
+            break;
+        }
     }
 
     public void DeleteRecord(T record)

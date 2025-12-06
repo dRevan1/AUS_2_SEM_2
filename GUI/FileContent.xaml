@@ -6,7 +6,7 @@
     xmlns:local="clr-namespace:GUI"
     xmlns:models="clr-namespace:SEM_2_CORE;assembly=SEM_2_CORE" 
     mc:Ignorable="d"
-    Title="PeopleFileContent" Height="450" Width="800">
+    Title="{Binding Path}" Height="450" Width="800">
     <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
         <Grid>
             <Grid.ColumnDefinitions>
