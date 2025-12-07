@@ -1,4 +1,6 @@
 ﻿using SEM_2_CORE;
+using SEM_2_CORE.App;
+using System;
 using System.Windows;
 
 namespace GUI
@@ -10,42 +12,49 @@ namespace GUI
     {
         public string WindowTitle { get; private set; }
         public string ButtonText { get; private set; }
-        private bool Update {  get; set; }
-        public InsertUpdatePerson(Person? person = null, bool update = false)
+        private Person? Person {  get; set; }
+        private PCRTestDatabase Database { get; set; }
+        public InsertUpdatePerson(PCRTestDatabase database, Person? person = null)
         {
             WindowTitle = (person == null) ? "Insert person" : $"Edit person {person.ID}";
             ButtonText = (person == null) ? "Insert" : "Edit";
-            Update = update;
-            if (person != null)
-            {
-                PreFill(person);
-                ID_Box.IsEnabled = false;
-            }
-
+            Person = person;
+            Database = database;
             InitializeComponent();
             DataContext = this;
+            if (person != null)
+            {
+                PreFill();
+                ID_Box.IsEnabled = false;
+            }
         }
 
-        private void PreFill(Person person)
+        private void PreFill()
         {
-            Name_Box.Text = person.Name;
-            Surname_Box.Text = person.Surname;
-            DOB_Box.Text = person.DayOfBirth.ToString();
-            MOB_Box.Text = person.MonthOfBirth.ToString();
-            YOB_Box.Text = person.YearOfBirth.ToString();
-            ID_Box.Text = person.ID;
+            if (Person != null)
+            {
+                Name_Box.Text = Person.Name;
+                Surname_Box.Text = Person.Surname;
+                DOB_Box.Text = Person.DayOfBirth.ToString();
+                MOB_Box.Text = Person.MonthOfBirth.ToString();
+                YOB_Box.Text = Person.YearOfBirth.ToString();
+                ID_Box.Text = Person.ID;
+            }
         }
 
         private void InsertUpdateBtn_Click(object sender, RoutedEventArgs e)
         {
-            if (Update)
+            string message;
+            (byte, byte, ushort) DOB = (byte.Parse(DOB_Box.Text), byte.Parse(MOB_Box.Text), ushort.Parse(YOB_Box.Text));
+            if (Person != null)
             {
-
+                message = Database.EditPerson(Name_Box.Text, Surname_Box.Text, DOB, Person.ID);
             }
             else
             {
-
+                message = Database.InsertPerson(Name_Box.Text, Surname_Box.Text, DOB, ID_Box.Text);
             }
+            MessageBox.Show(message);
         }
     }
 }

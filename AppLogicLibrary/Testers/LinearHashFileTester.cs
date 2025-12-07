@@ -1,4 +1,5 @@
 ﻿using SEM_2_CORE.Files;
+using System.Xml.Schema;
 
 namespace SEM_2_CORE.Testers;
 
@@ -22,17 +23,6 @@ public class LinearHashFileTester
         Random rand = new Random();
         int range = (end - start).Days;
         return start.AddDays(rand.Next(range));
-    }
-
-    private Person GeneratePerson(int id)
-    {
-        DateTime randomDate = RandomDate(new DateTime(1960, 1, 1), new DateTime(2023, 12, 31));
-        byte day = (byte)randomDate.Day;
-        byte month = (byte)randomDate.Month;
-        ushort year = (ushort)randomDate.Year;
-        Person person = new Person("Name" + id, "Surname" + id, day, month, year, id.ToString());
-
-        return person;
     }
 
     private int HashRecord(Person person)
@@ -422,6 +412,35 @@ public class LinearHashFileTester
                 SplitPointer++;
             }
         }
+    }
+
+    public Person GeneratePerson(int id, DateTime start = default, DateTime end = default)
+    {
+        DateTime randomDate = (start == default || end == default) ? RandomDate(new DateTime(1960, 1, 1), new DateTime(2023, 12, 31)) : RandomDate(start, end);
+        byte day = (byte)randomDate.Day;
+        byte month = (byte)randomDate.Month;
+        ushort year = (ushort)randomDate.Year;
+        Person person = new Person("Name" + id, "Surname" + id, day, month, year, id.ToString());
+
+        return person;
+    }
+
+    public PCRTest GeneratePCRTest(uint testID, int personID, DateTime start = default, DateTime end = default)
+    {
+        DateTime randomDate = (start == default || end == default) ? RandomDate(new DateTime(1960, 1, 1), new DateTime(2023, 12, 31)) : RandomDate(start, end);
+        Random rand = new Random();
+        byte day = (byte)randomDate.Day;
+        byte month = (byte)randomDate.Month;
+        ushort year = (ushort)randomDate.Year;
+        byte minute = (byte)randomDate.Minute;
+        byte hour = (byte)randomDate.Hour;
+        bool result = (rand.Next() < 0.5) ? true : false;
+        double value = rand.Next() * 100;
+        string note = $"Note {testID}";
+
+        PCRTest test = new PCRTest(day, month, year, minute, hour, personID.ToString(), testID, result, value, note);
+
+        return test;
     }
 
     public void LinearHashTest(LinearHashFile<Person> linHashFile, int operations)

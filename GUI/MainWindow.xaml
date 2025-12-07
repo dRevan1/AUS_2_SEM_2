@@ -27,8 +27,6 @@
                     <Button Content="#2 Find person" Click="FindPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                     <Button Content="#3 Find PCR test" Click="FindTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                     <Button Content="#4 Insert person" Click="InsertPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                    <Button Content="#5 Delete PCR test" Click="DeleteTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
-                    <Button Content="#6 Delete person" Click="DeletePersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                     <Button Content="#7 Edit person" Click="EditPersonBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                     <Button Content="#8 Edit PCR test" Click="EditTestBtn_Click" Width="auto" Height="30" Margin="0,2,0,0" VerticalAlignment="Top" HorizontalAlignment="Left"/>
                 </StackPanel>

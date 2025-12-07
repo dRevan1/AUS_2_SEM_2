@@ -13,70 +13,19 @@
                 <ColumnDefinition Width="*"/>
             </Grid.ColumnDefinitions>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto" MinHeight="34"/>
-                <RowDefinition Height="Auto" MinHeight="34"/>
-                <RowDefinition Height="Auto" MinHeight="34"/>
-                <RowDefinition Height="Auto" MinHeight="34"/>
+                <RowDefinition Height="Auto" MinHeight="24"/>
+                <RowDefinition Height="Auto" MinHeight="24"/>
+                <RowDefinition Height="Auto" MinHeight="24"/>
+                <RowDefinition Height="Auto" MinHeight="24"/>
             </Grid.RowDefinitions>
 
-            <TextBlock Grid.Row="0">
-                <Run Text="Person: " FontWeight="Bold"/>
+            <TextBlock Grid.Row="0" VerticalAlignment="Center">
+                <Run Text="Person " FontWeight="Bold"/>
             </TextBlock>
-            <ListBox x:Name="Person" Grid.Row="1" ItemsSource="{Binding People}" Grid.ColumnSpan="1" Margin="5,3" VerticalAlignment="Stretch">
-                <ListBox.ItemTemplate>
-                    <DataTemplate DataType="{x:Type models:Person}">
-                        <Grid>
-                            <Grid.RowDefinitions>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="Auto"/>
-                                <RowDefinition Height="*"/>
-                            </Grid.RowDefinitions>
+            <TextBlock Grid.Row="1" VerticalAlignment="Center" Text="{Binding PersonData}" ></TextBlock>
 
-                            <TextBlock Grid.Row="0">
-                                <Run Text="Name: " FontWeight="Bold"/><Run Text="{Binding Name}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="1">
-                                <Run Text="Surname: " FontWeight="Bold"/><Run Text="{Binding Surname}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="2">
-                                <Run Text="Date of birth: " FontWeight="Bold"/><Run Text="{Binding DayOfBirth}"/><Run Text="."/><Run Text="{Binding MonthOfBirth}"/><Run Text="."/><Run Text="{Binding YearOfBirth}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="3">
-                                <Run Text="ID: " FontWeight="Bold"/><Run Text="{Binding ID}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="4">
-                                <Run Text="Test 1: " FontWeight="Bold"/><Run Text="{Binding Tests[0]}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="5">
-                                <Run Text="Test 2: " FontWeight="Bold"/><Run Text="{Binding Tests[1]}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="6">
-                                <Run Text="Test 3: " FontWeight="Bold"/><Run Text="{Binding Tests[2]}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="7">
-                                <Run Text="Test 4: " FontWeight="Bold"/><Run Text="{Binding Tests[3]}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="8">
-                                <Run Text="Test 5: " FontWeight="Bold"/><Run Text="{Binding Tests[4]}"/>
-                            </TextBlock>
-                            <TextBlock Grid.Row="9">
-                                <Run Text="Test 6: " FontWeight="Bold"/><Run Text="{Binding Tests[5]}"/>
-                            </TextBlock>
-                        </Grid>
-                    </DataTemplate>
-                </ListBox.ItemTemplate>
-            </ListBox>
-            <TextBlock Grid.Row="2">
-                <Run Text="Number of tests: " FontWeight="Bold"/><Run Text="{Binding TestCount}"/>
-            </TextBlock>
-            <ListBox x:Name="Test" Grid.Row="3" ItemsSource="{Binding Tests}" Grid.ColumnSpan="1" Margin="5,3" VerticalAlignment="Stretch">
+            <TextBlock Grid.Row="2" Text="{Binding TestCount, StringFormat=Number of tests: {0}}"></TextBlock>
+            <ListBox x:Name="TestList" Grid.Row="3" ItemsSource="{Binding Tests}" Grid.ColumnSpan="1" Margin="5,3" VerticalAlignment="Stretch">
                 <ListBox.ItemTemplate>
                     <DataTemplate DataType="{x:Type models:PCRTest}">
                         <Grid>
