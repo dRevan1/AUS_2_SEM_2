@@ -1,7 +1,6 @@
 ﻿using SEM_2_CORE;
 using SEM_2_CORE.App;
 using SEM_2_CORE.Files;
-using SEM_2_CORE.Testers;
 using System.Windows;
 
 namespace GUI
@@ -11,18 +10,52 @@ namespace GUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private PCRTestDatabase database {  get; set; }
+        private PCRTestDatabase Database {  get; set; }  // na začiatku sa musí vybrať alebo vytvoriť nová inštancia, aby fungovali všetky metódy ovládania aplikácie
         public MainWindow()
         {
-            database = new PCRTestDatabase(4, "people.bin", "people_overflow.bin", 500, 220, 4, "test.bin", "test_overflow.bin", 500, 220);
+            Database = new PCRTestDatabase(4, "people.bin", "people_overflow.bin", 500, 220, 4, "test.bin", "test_overflow.bin", 500, 220);
             InitializeComponent();
             DataContext = this;
         }
 
         private void PopulateBtn_Click(object sender, RoutedEventArgs e)
         {
-            database.PopulateDatabase(1_000, 2_000);
-            MessageBox.Show("File(s) has/have been populated.");
+            var window = new GenerateRecords(Database);
+            window.ShowDialog();
+        }
+
+        private void CreateDatabaseBtn_Click(object sender, RoutedEventArgs e)
+        {
+            // súbory
+            string name = Dat_name.Text;
+            string pplPrim = name + "_ppl_primary.bin";
+            string pplOvrf = name + "ppl_overflow.bin";
+            string tPrim = name + "_test_primary.bin";
+            string tOvrf = name + "_test_overflow.bin";
+
+            // info pre súbor ľudí
+            int peopleMod = int.Parse(P_mod.Text);
+            int pplPrimSize = int.Parse(P_prim_size.Text);
+            int pplOvrfSize = int.Parse(P_ovrf_size.Text);
+
+            // info pre súbor PCR testov
+            int testsMod = int.Parse(T_mod.Text);
+            int tPrimSize = int.Parse(T_prim_size.Text);
+            int tOvrfSize = int.Parse(T_ovrf_size.Text);
+
+            Database = new PCRTestDatabase(peopleMod, pplPrim, pplOvrf, pplPrimSize, pplOvrfSize, testsMod, tPrim, tOvrf, tPrimSize, tOvrfSize);
+        }
+
+        private void LoadDatabaseBtn_Click( object sender, RoutedEventArgs e)
+        {
+            string name = Dat_name.Text;
+            string pplPrim = name + "_ppl_primary.bin";
+            string pplOvrf = name + "ppl_overflow.bin";
+            string pplCtrl = name + "_ppl_control.csv";
+
+            string tPrim = name + "_test_primary.bin";
+            string tOvrf = name + "_test_overflow.bin";
+            string tCtrl = name + "_test_control.csv";
         }
 
         private void ViewContentBtn_Click(object sender, RoutedEventArgs e)
@@ -30,27 +63,27 @@ namespace GUI
             Person personInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
             PCRTest testInstance = new PCRTest(1, 1, 2025, 1, 1, "0", 0, false, 0.0, "empty");
 
-            List<BlockViewData> viewData = database.GetBlockViewData<PrimaryHashBlock<Person>, Person>(database.PeopleFile.PrimaryFile, personInstance);
-            FileContent contentWindow = new FileContent(viewData, database.PeopleFile.PrimaryFile.FilePath, database.PeopleFile.PrimaryFile.BlockSize, database.PeopleFile.PrimaryFile.BlockFactor, viewData.Count);
+            List<BlockViewData> viewData = Database.GetBlockViewData<PrimaryHashBlock<Person>, Person>(Database.PeopleFile.PrimaryFile, personInstance);
+            FileContent contentWindow = new FileContent(viewData, Database.PeopleFile.PrimaryFile.FilePath, Database.PeopleFile.PrimaryFile.BlockSize, Database.PeopleFile.PrimaryFile.BlockFactor, viewData.Count);
             contentWindow.Show();
 
-            viewData = database.GetBlockViewData<OverflowHashBlock<Person>, Person>(database.PeopleFile.OverflowFile, personInstance);
-            FileContent contentWindow2 = new FileContent(viewData, database.PeopleFile.OverflowFile.FilePath, database.PeopleFile.OverflowFile.BlockSize, database.PeopleFile.OverflowFile.BlockFactor, viewData.Count);
+            viewData = Database.GetBlockViewData<OverflowHashBlock<Person>, Person>(Database.PeopleFile.OverflowFile, personInstance);
+            FileContent contentWindow2 = new FileContent(viewData, Database.PeopleFile.OverflowFile.FilePath, Database.PeopleFile.OverflowFile.BlockSize, Database.PeopleFile.OverflowFile.BlockFactor, viewData.Count);
             contentWindow2.Show();
 
-            viewData = database.GetBlockViewData<PrimaryHashBlock<PCRTest>, PCRTest>(database.PcrTestFile.PrimaryFile, testInstance);
-            FileContent contentWindow3 = new FileContent(viewData, database.PcrTestFile.PrimaryFile.FilePath, database.PcrTestFile.PrimaryFile.BlockSize, database.PcrTestFile.PrimaryFile.BlockFactor, viewData.Count);
+            viewData = Database.GetBlockViewData<PrimaryHashBlock<PCRTest>, PCRTest>(Database.PcrTestFile.PrimaryFile, testInstance);
+            FileContent contentWindow3 = new FileContent(viewData, Database.PcrTestFile.PrimaryFile.FilePath, Database.PcrTestFile.PrimaryFile.BlockSize, Database.PcrTestFile.PrimaryFile.BlockFactor, viewData.Count);
             contentWindow3.Show();
 
-            viewData = database.GetBlockViewData<OverflowHashBlock<PCRTest>, PCRTest>(database.PcrTestFile.OverflowFile, testInstance);
-            FileContent contentWindow4 = new FileContent(viewData, database.PcrTestFile.OverflowFile.FilePath, database.PcrTestFile.OverflowFile.BlockSize, database.PcrTestFile.OverflowFile.BlockFactor, viewData.Count);
+            viewData = Database.GetBlockViewData<OverflowHashBlock<PCRTest>, PCRTest>(Database.PcrTestFile.OverflowFile, testInstance);
+            FileContent contentWindow4 = new FileContent(viewData, Database.PcrTestFile.OverflowFile.FilePath, Database.PcrTestFile.OverflowFile.BlockSize, Database.PcrTestFile.OverflowFile.BlockFactor, viewData.Count);
             contentWindow4.Show();
         }
 
         // # 1 - Vloženie výsledku PCR testu
         private void InsertTestBtn_Click(object sender, RoutedEventArgs e)
         {
-            var window = new InsertUpdatePCRTest(database);
+            var window = new InsertUpdatePCRTest(Database);
             window.ShowDialog();
         }
 
@@ -63,7 +96,7 @@ namespace GUI
                 MessageBox.Show($"Person with empty ID isn't in the database!");
                 return;
             }
-            Person? person = database.GetPerson(ID.Text, out tests);
+            Person? person = Database.GetPerson(ID.Text, out tests);
             if (person != null)
             {
                 var window = new DisplayRecords(person, tests, true);
@@ -84,7 +117,7 @@ namespace GUI
                 MessageBox.Show($"PCR test with empty ID isn't in the database!");
                 return;
             }
-            PCRTest? test = database.GetPCRTest(uint.Parse(ID.Text), out person);
+            PCRTest? test = Database.GetPCRTest(uint.Parse(ID.Text), out person);
             if (test != null)
             {
                 if (person == null)
@@ -106,7 +139,7 @@ namespace GUI
         // # 4 - Vloženie osoby
         private void InsertPersonBtn_Click(object sender, RoutedEventArgs e)
         {
-            var window = new InsertUpdatePerson(database);
+            var window = new InsertUpdatePerson(Database);
             window.ShowDialog();
         }
 
@@ -118,10 +151,10 @@ namespace GUI
                 MessageBox.Show($"Person with empty ID isn't in the database!");
                 return;
             }
-            Person? person = database.GetPerson(ID.Text, out _);
+            Person? person = Database.GetPerson(ID.Text, out _);
             if (person != null)
             {
-                var window = new InsertUpdatePerson(database, person);
+                var window = new InsertUpdatePerson(Database, person);
                 window.ShowDialog();
             }
             else
@@ -138,10 +171,10 @@ namespace GUI
                 MessageBox.Show($"PCR test with empty ID isn't in the database!");
                 return;
             }
-            PCRTest? test = database.GetPCRTest(uint.Parse(ID.Text), out _);
+            PCRTest? test = Database.GetPCRTest(uint.Parse(ID.Text), out _);
             if (test != null)
             {
-                var window = new InsertUpdatePCRTest(database, test);
+                var window = new InsertUpdatePCRTest(Database, test);
                 window.ShowDialog();
             }
             else

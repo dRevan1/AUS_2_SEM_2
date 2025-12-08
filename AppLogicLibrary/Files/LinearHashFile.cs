@@ -70,11 +70,6 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         }
     }
 
-    private void TruncateSequence()
-    {
-
-    }
-
     private bool SplitCondition()
     {
         double loadFactor = (double)TotalRecordsCount / (double)TotalSpace;
@@ -90,11 +85,6 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         }
 
         return false;
-    }
-
-    private bool MergeCondition()
-    {
-        return true;
     }
 
     private void Split(T record)
@@ -177,15 +167,6 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
             {
                 SplitPointer++;
             }
-        }
-    }
-
-    private void Merge()
-    {
-        while (MergeCondition())
-        {
-
-
         }
     }
 
@@ -277,15 +258,21 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
 
     public T? Get(T record)
     {
-        int index = GetRecordIndex(record);
+        return FindRecordBlock(record, out _, out _, out _);
+    }
 
+    private T? FindRecordBlock(T record, out PrimaryHashBlock<T>? primaryBlock, out OverflowHashBlock<T>? overflowBlock, out int index)
+    {
+        index = GetRecordIndex(record);
+        overflowBlock = null;
+        primaryBlock = null;
         if (!PrimaryFile.CheckIndex(index))
         {
             return default;
         }
-
-        PrimaryHashBlock<T> primaryBlock = PrimaryFile.LoadBlockFromFile<PrimaryHashBlock<T>>(record, index);
+        primaryBlock = PrimaryFile.LoadBlockFromFile<PrimaryHashBlock<T>>(record, index);
         T? foundRecord = PrimaryFile.TryToFindRecord(primaryBlock, record);   // skúsi sa nájsť v primárnom bloku záznam, ak tam nie je a existuje index na overflow blok, tak sa to skúsi tam
+
         if (foundRecord != null)
         {
             return foundRecord;
@@ -294,15 +281,17 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         {
             return default;
         }
-        OverflowHashBlock<T> overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, primaryBlock.NextBlockIndex);
+        overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, primaryBlock.NextBlockIndex);
+        index = primaryBlock.NextBlockIndex;
         foundRecord = OverflowFile.TryToFindRecord(overflowBlock, record);
+
         if (foundRecord != null)
         {
             return foundRecord;
         }
-
         while (overflowBlock.NextBlockIndex != -1)
         {
+            index = overflowBlock.NextBlockIndex;
             overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);  // prejdenie zreťazenia overflow blokov a pokus o nájdenie záznamu
             foundRecord = OverflowFile.TryToFindRecord(overflowBlock, record);
 
@@ -311,77 +300,30 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
                 return foundRecord;
             }
         }
+
         return foundRecord;  // v tomto bode bude return vždy null
     }
 
     public int Update(T record)
     {
-        T? findRecord = Get(record);
+        PrimaryHashBlock<T>? primaryBlock;
+        OverflowHashBlock<T>? overflowBlock;
+        int index;
+
+        T? findRecord = FindRecordBlock(record, out primaryBlock, out overflowBlock, out index);
         if (findRecord == null)
         {
             return -1;
         }
-
-        return 0;
-    }
-
-    public int Delete(T record)
-    {
-        int index = GetRecordIndex(record);
-
-        if (PrimaryFile.CheckIndex(index))
+        else if (overflowBlock != null)
         {
-            Console.WriteLine("Cannot delete - record not found.");
-            return -1;
+            overflowBlock.UpdateRecord(record);
+            OverflowFile.InsertAt(index, overflowBlock);
         }
-        PrimaryHashBlock<T> primaryBlock = PrimaryFile.LoadBlockFromFile<PrimaryHashBlock<T>>(record, index);
-        List<OverflowHashBlock<T>> overflowBlocks = new List<OverflowHashBlock<T>>();
-
-        T? foundRecord = PrimaryFile.TryToFindRecord(primaryBlock, record);   // skúsi sa nájsť v primárnom bloku záznam, ak tam nie je a existuje index na overflow blok, tak sa to skúsi tam
-        if (foundRecord != null)
+        else if (primaryBlock != null)
         {
-            primaryBlock.DeleteRecord(foundRecord);   // asi prepísať delete v primary blocku aby dával --
-            primaryBlock.TotalRecordsCount--;
-        }
-        else if (primaryBlock.NextBlockIndex == -1)
-        {
-            Console.WriteLine("Cannot delete - record not found.");
-            return -1;
-        }
-
-        OverflowHashBlock<T> overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, primaryBlock.NextBlockIndex);
-        if (foundRecord == null)
-        {
-            do
-            {
-                foundRecord = OverflowFile.TryToFindRecord(overflowBlock, record);
-                overflowBlocks.Add(overflowBlock);
-                if (foundRecord != null)
-                {
-                    overflowBlock.DeleteRecord(foundRecord);
-                    primaryBlock.TotalRecordsCount--;
-                    break;
-                }
-                if (primaryBlock.NextBlockIndex != -1)
-                {
-                    overflowBlock = OverflowFile.LoadBlockFromFile<OverflowHashBlock<T>>(record, overflowBlock.NextBlockIndex);  // prejdenie zreťazenia overflow blokov a pokus o nájdenie záznamu
-                }
-
-            } while (overflowBlock.NextBlockIndex != -1);
-        }
-
-        if (foundRecord == null)  // záznam sa nenašiel ani v preplňovacích blokoch
-        {
-            Console.WriteLine("Cannot delete - record not found.");
-            return -1;
-        }
-
-        // if else - treba striasenie - zapíše sa tam, inak zapísať ten blok, kde sa mazalo - asi pridať nejaký indikátor alebo tak nejak
-
-
-        if (MergeCondition())
-        {
-            Merge();
+            primaryBlock!.UpdateRecord(record);
+            PrimaryFile.InsertAt(index, primaryBlock);
         }
 
         return index;

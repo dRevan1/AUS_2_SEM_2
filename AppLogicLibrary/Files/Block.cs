@@ -95,8 +95,8 @@ public class Block<T> : IByteOperations where T : IDataClassOperations<T>, IByte
             if (RecordsList[i].Equals(record))
             {
                 RecordsList[i] = record.CreateClass();
+                break;
             }
-            break;
         }
     }
 

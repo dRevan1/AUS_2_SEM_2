@@ -16,7 +16,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
     public string ID { get; set; }
     public uint[] Tests { get; set; } = new uint[6];
 
-    public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id)
+    public Person(string name, string surname, byte dayOfBirth, byte monthOfBirth, ushort yearOfBirth, string id, uint[]? tests = default)
     {
         Name = name;
         Surname = surname;
@@ -24,6 +24,13 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         MonthOfBirth = monthOfBirth;
         YearOfBirth = yearOfBirth;
         ID = id;
+        if (tests != null)
+        {
+            for (int i = 0; i < Tests.Length; i++)
+            {
+                Tests[i] = tests[i];
+            }
+        }
     }
 
     public override string ToString()
@@ -53,18 +60,6 @@ public class Person : IDataClassOperations<Person>, IByteOperations
         }
     }
 
-    public void RemoveTest(uint testID)
-    {
-        for (int i = 0;i < Tests.Length; i++)
-        {
-            if (Tests[i] == testID)
-            {
-                Tests[i] = 0;
-                break;
-            }
-        }
-    }
-
     public bool Equals(Person other)
     {
         return other.ID == ID;
@@ -72,7 +67,7 @@ public class Person : IDataClassOperations<Person>, IByteOperations
 
     public Person CreateClass()
     {
-        return new Person(Name, Surname, DayOfBirth, MonthOfBirth, YearOfBirth, ID);
+        return new Person(Name, Surname, DayOfBirth, MonthOfBirth, YearOfBirth, ID, Tests);
     }
 
     public int GetSize()  // teraz je to 109 bytov

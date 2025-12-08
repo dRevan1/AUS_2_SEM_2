@@ -24,6 +24,7 @@ namespace GUI
             DataContext = this;
             if (test != null)
             {
+                Test = test.CreateClass();
                 PreFill();
                 ID_Box.IsEnabled = false;
                 PersonID_Box.IsEnabled = false;

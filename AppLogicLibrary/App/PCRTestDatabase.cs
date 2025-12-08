@@ -101,7 +101,16 @@ public class PCRTestDatabase
     public string InsertPCRTest((byte day, byte month, ushort year, byte minute, byte hour) dateTime, string personID, uint testID, bool result, double testValue, string note)
     {
         PCRTest test = new PCRTest(dateTime.day, dateTime.month, dateTime.year, dateTime.minute, dateTime.hour, personID, testID, result, testValue, note);
+        personDataInstance.ID = personID;
+        Person? person = PeopleFile.Get(personDataInstance);
+        if (person == null )
+        {
+            return $"PCR test with ID: {testID} couldn't be added, person with {personID} is not in the database!";
+        }
+
         PcrTestFile.Insert(test);
+        person.AddTest(testID);
+        PeopleFile.Update(person);
         return $"PCR test with ID: {testID} was added.";
     }
     
@@ -115,9 +124,10 @@ public class PCRTestDatabase
         if (person != null)
         {
             tests = GetPatientsTests(person.CreateClass());
+            return person.CreateClass();
         }
 
-        return person;
+        return person;  // tu bude null
     }
 
     // # 3 - Vyhľadanie PCR testu + osoba
@@ -132,16 +142,21 @@ public class PCRTestDatabase
             test = test.CreateClass();
             personDataInstance.ID = test.PersonID;
             patient = PeopleFile.Get(personDataInstance);
+            if (patient != null)
+            {
+                patient = patient.CreateClass();
+            }
+            return test.CreateClass();
         }
 
         return test;
     }
 
     // # 7 - Editácia údajov osoby
-    public string EditPerson(string name, string surname, (byte day, byte month, ushort year) dateOB, string id)
+    public string EditPerson(string name, string surname, (byte day, byte month, ushort year) dateOB, string id, uint[] tests)
     {
-        Person patient = new Person(name, surname, dateOB.day, dateOB.month, dateOB.year, id);
-        string result = (PeopleFile.Update(personDataInstance) == -1) ? $"Person with ID: {id} edit failed!" : $"Person with ID: {id} was edited.";
+        Person patient = new Person(name, surname, dateOB.day, dateOB.month, dateOB.year, id, tests);
+        string result = (PeopleFile.Update(patient) == -1) ? $"Person with ID: {id} edit failed!" : $"Person with ID: {id} was edited.";
         return result;
     }
 
@@ -149,7 +164,7 @@ public class PCRTestDatabase
     public string EditPCRTest((byte day, byte month, ushort year, byte minute, byte hour) dateTime, string personID, uint testID, bool testResult, double testValue, string note)
     {
         PCRTest test = new PCRTest(dateTime.day, dateTime.month, dateTime.year, dateTime.minute, dateTime.hour, personID, testID, testResult, testValue, note);
-        string result = (PcrTestFile.Update(testDataInstance) == -1) ? $"PCR test with ID: {testID} edit failed!" : $"PCR test with ID: {testID} was edited.";
+        string result = (PcrTestFile.Update(test) == -1) ? $"PCR test with ID: {testID} edit failed!" : $"PCR test with ID: {testID} was edited.";
         return result;
     }
 }

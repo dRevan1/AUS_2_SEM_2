@@ -36,6 +36,7 @@
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
                                 <RowDefinition Height="*"/>
                             </Grid.RowDefinitions>
 
@@ -60,6 +61,7 @@
                             <TextBlock Grid.Row="6">
                                 <Run Text="Note: " FontWeight="Bold"/><Run Text="{Binding Note}"/>
                             </TextBlock>
+                            <TextBlock Grid.Row="7" Text="-------------------"></TextBlock>
                         </Grid>
                     </DataTemplate>
                 </ListBox.ItemTemplate>

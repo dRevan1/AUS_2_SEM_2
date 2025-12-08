@@ -420,7 +420,7 @@ public class LinearHashFileTester
         byte day = (byte)randomDate.Day;
         byte month = (byte)randomDate.Month;
         ushort year = (ushort)randomDate.Year;
-        Person person = new Person("Name" + id, "Surname" + id, day, month, year, id.ToString());
+        Person person = new Person("Name" + id, "Surn" + id, day, month, year, id.ToString());
 
         return person;
     }
@@ -435,7 +435,7 @@ public class LinearHashFileTester
         byte minute = (byte)randomDate.Minute;
         byte hour = (byte)randomDate.Hour;
         bool result = (rand.Next() < 0.5) ? true : false;
-        double value = rand.Next() * 100;
+        double value = Math.Round(rand.NextDouble() * 100, 2);
         string note = $"Note {testID}";
 
         PCRTest test = new PCRTest(day, month, year, minute, hour, personID.ToString(), testID, result, value, note);

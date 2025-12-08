@@ -24,6 +24,7 @@ namespace GUI
             DataContext = this;
             if (person != null)
             {
+                person = person.CreateClass();
                 PreFill();
                 ID_Box.IsEnabled = false;
             }
@@ -48,7 +49,7 @@ namespace GUI
             (byte, byte, ushort) DOB = (byte.Parse(DOB_Box.Text), byte.Parse(MOB_Box.Text), ushort.Parse(YOB_Box.Text));
             if (Person != null)
             {
-                message = Database.EditPerson(Name_Box.Text, Surname_Box.Text, DOB, Person.ID);
+                message = Database.EditPerson(Name_Box.Text, Surname_Box.Text, DOB, Person.ID, Person.Tests);
             }
             else
             {
