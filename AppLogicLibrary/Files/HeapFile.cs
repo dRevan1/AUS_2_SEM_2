@@ -10,8 +10,8 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
     public int BlockFactor { get; private set; }
     public int PaddingSize { get; private set; }
     private FileStream Stream;
-    public List<int> FreeBlocks { get; set; }
-    public List<int> PartiallyFreeBlocks { get; set; }
+    public List<int> FreeBlocks { get; set; } = new List<int>();
+    public List<int> PartiallyFreeBlocks { get; set; } = new List<int>();
 
     public HeapFile(string filePath, int blockSize, T dataInstance, int startSize = 0, uint mode = 0)
     {
@@ -27,8 +27,6 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
             extraBlockBytes = 8;
         }
         BlockFactor = (BlockSize - extraBlockBytes) / dataInstance.GetSize();  // 4 byty sú na valid count v bloku, takže až zvyšok je pre záznamy
-        FreeBlocks = new List<int>();
-        PartiallyFreeBlocks = new List<int>();
         Stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
         int usedSpace = extraBlockBytes + BlockFactor * dataInstance.GetSize();
         PaddingSize = BlockSize - usedSpace;
@@ -39,8 +37,49 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
         }
     }
 
+    public HeapFile(StreamReader reader)
+    {
+        FilePath = reader.ReadLine()!;
+        BlockSize = int.Parse(reader.ReadLine()!);
+        BlockFactor = int.Parse(reader.ReadLine()!);
+        PaddingSize = int.Parse(reader.ReadLine()!);
+
+        int freeBlocks = int.Parse(reader.ReadLine()!);
+        for (int i = 0; i < freeBlocks; i++)
+        {
+            FreeBlocks.Add(int.Parse(reader.ReadLine()!));
+        }
+        int partiallyFreeBlocks = int.Parse(reader.ReadLine()!);
+        for (int i = 0; i < partiallyFreeBlocks; i++)
+        {
+            PartiallyFreeBlocks.Add(int.Parse(reader.ReadLine()!));
+        }
+        Stream = new FileStream(FilePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+    }
+
     ~HeapFile()
     {
+        Stream.Close();
+    }
+
+    public void SaveControlData(StreamWriter writer)
+    {
+        writer.WriteLine(FilePath);
+        writer.WriteLine(BlockSize);
+        writer.WriteLine(BlockFactor);
+        writer.WriteLine(PaddingSize);
+        writer.WriteLine(FreeBlocks.Count);
+        for (int i = 0; i < FreeBlocks.Count; i++)
+        {
+            writer.WriteLine(FreeBlocks[i]);
+        }
+
+        writer.WriteLine(PartiallyFreeBlocks.Count);
+        for (int i = 0; i < PartiallyFreeBlocks.Count; i++)
+        {
+            writer.WriteLine(PartiallyFreeBlocks[i]);
+        }
+
         Stream.Close();
     }
 

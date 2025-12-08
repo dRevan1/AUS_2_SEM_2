@@ -1,6 +1,7 @@
 ﻿using SEM_2_CORE;
 using SEM_2_CORE.App;
 using SEM_2_CORE.Files;
+using System.ComponentModel;
 using System.Windows;
 
 namespace GUI
@@ -10,26 +11,43 @@ namespace GUI
     /// </summary>
     public partial class MainWindow : Window
     {
-        private PCRTestDatabase Database {  get; set; }  // na začiatku sa musí vybrať alebo vytvoriť nová inštancia, aby fungovali všetky metódy ovládania aplikácie
+        private PCRTestDatabase? Database {  get; set; }  // na začiatku sa musí vybrať alebo vytvoriť nová inštancia, aby fungovali všetky metódy ovládania aplikácie
         public MainWindow()
         {
-            Database = new PCRTestDatabase(4, "people.bin", "people_overflow.bin", 500, 220, 4, "test.bin", "test_overflow.bin", 500, 220);
             InitializeComponent();
             DataContext = this;
+            this.Closing += OnClosing;
+        }
+
+        private void OnClosing(object sender, CancelEventArgs e)
+        {
+            if (Database != null)
+            {
+                Database.SaveControlData();
+            }
         }
 
         private void PopulateBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot populate - no databse loaded!");
+                return;
+            }
             var window = new GenerateRecords(Database);
             window.ShowDialog();
         }
 
         private void CreateDatabaseBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database != null)
+            {
+                Database.SaveControlData();
+            }
             // súbory
             string name = Dat_name.Text;
             string pplPrim = name + "_ppl_primary.bin";
-            string pplOvrf = name + "ppl_overflow.bin";
+            string pplOvrf = name + "_ppl_overflow.bin";
             string tPrim = name + "_test_primary.bin";
             string tOvrf = name + "_test_overflow.bin";
 
@@ -43,23 +61,30 @@ namespace GUI
             int tPrimSize = int.Parse(T_prim_size.Text);
             int tOvrfSize = int.Parse(T_ovrf_size.Text);
 
-            Database = new PCRTestDatabase(peopleMod, pplPrim, pplOvrf, pplPrimSize, pplOvrfSize, testsMod, tPrim, tOvrf, tPrimSize, tOvrfSize);
+            Database = new PCRTestDatabase(peopleMod, pplPrim, pplOvrf, pplPrimSize, pplOvrfSize, testsMod, tPrim, tOvrf, tPrimSize, tOvrfSize, name);
+            MessageBox.Show($"Database {name} created.");
         }
 
         private void LoadDatabaseBtn_Click( object sender, RoutedEventArgs e)
         {
+            if (Database != null)
+            {
+                Database.SaveControlData();
+            }
             string name = Dat_name.Text;
-            string pplPrim = name + "_ppl_primary.bin";
-            string pplOvrf = name + "ppl_overflow.bin";
             string pplCtrl = name + "_ppl_control.csv";
-
-            string tPrim = name + "_test_primary.bin";
-            string tOvrf = name + "_test_overflow.bin";
             string tCtrl = name + "_test_control.csv";
+            Database = new PCRTestDatabase(pplCtrl, tCtrl, name);
+            MessageBox.Show($"Database {name} loaded.");
         }
 
         private void ViewContentBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot view contents - no databse loaded!");
+                return;
+            }
             Person personInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
             PCRTest testInstance = new PCRTest(1, 1, 2025, 1, 1, "0", 0, false, 0.0, "empty");
 
@@ -83,6 +108,11 @@ namespace GUI
         // # 1 - Vloženie výsledku PCR testu
         private void InsertTestBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot insert test - no databse loaded!");
+                return;
+            }
             var window = new InsertUpdatePCRTest(Database);
             window.ShowDialog();
         }
@@ -90,6 +120,11 @@ namespace GUI
         // # 2 - Vyhľadanie osoby + jej testy
         private void FindPersonBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot find person - no databse loaded!");
+                return;
+            }
             List<PCRTest> tests = new List<PCRTest>();
             if (string.IsNullOrWhiteSpace(ID.Text))
             {
@@ -111,6 +146,11 @@ namespace GUI
         // # 3 - Vyhľadanie PCR testu + osoba
         private void FindTestBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot find test - no databse loaded!");
+                return;
+            }
             Person? person;
             if (string.IsNullOrWhiteSpace(ID.Text))
             {
@@ -139,6 +179,11 @@ namespace GUI
         // # 4 - Vloženie osoby
         private void InsertPersonBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot insert person - no databse loaded!");
+                return;
+            }
             var window = new InsertUpdatePerson(Database);
             window.ShowDialog();
         }
@@ -146,6 +191,11 @@ namespace GUI
         // # 7 - Editácia údajov osoby
         private void EditPersonBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot edit person - no databse loaded!");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(ID.Text))
             {
                 MessageBox.Show($"Person with empty ID isn't in the database!");
@@ -166,6 +216,11 @@ namespace GUI
         // # 8 - Editácia údajov PCR testu
         private void EditTestBtn_Click(object sender, RoutedEventArgs e)
         {
+            if (Database == null)
+            {
+                MessageBox.Show($"Cannot edit test - no databse loaded!");
+                return;
+            }
             if (string.IsNullOrWhiteSpace(ID.Text))
             {
                 MessageBox.Show($"PCR test with empty ID isn't in the database!");

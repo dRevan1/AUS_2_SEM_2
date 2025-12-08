@@ -1,4 +1,6 @@
 ﻿using SEM_2_CORE.Interfaces;
+using System.Reflection.Emit;
+using System.Reflection.PortableExecutable;
 
 namespace SEM_2_CORE.Files;
 
@@ -20,6 +22,37 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         PrimaryFile = new HeapFile<T>(primaryFilePath, primaryBlockSize, dataInstance, startSize: ModFunction, mode: 1);
         OverflowFile = new HeapFile<T>(overflowFilePath, overflowBlockSize, dataInstance, mode: 2);
         TotalSpace = minMod * PrimaryFile.BlockFactor;
+    }
+
+    // načítanie údajov a potom pre heap súbory
+    public LinearHashFile(string controlFilePath)
+    {
+        if (File.Exists(controlFilePath))
+        {
+            using StreamReader reader = new StreamReader(controlFilePath);
+            ModFunction = int.Parse(reader.ReadLine()!);
+            SplitPointer = int.Parse(reader.ReadLine()!);
+            TotalRecordsCount = int.Parse(reader.ReadLine()!);
+            TotalSpace = int.Parse(reader.ReadLine()!);
+            TotalChainLength = int.Parse(reader.ReadLine()!);
+            UsedPrimaryBlocks = int.Parse(reader.ReadLine()!);
+            PrimaryFile = new HeapFile<T>(reader);
+            OverflowFile = new HeapFile<T>(reader);
+            reader.Close();
+        }
+    }
+
+    public void SaveControlData(StreamWriter writer)
+    {
+        writer.WriteLine(ModFunction);
+        writer.WriteLine(SplitPointer);
+        writer.WriteLine(TotalRecordsCount);
+        writer.WriteLine(TotalSpace);
+        writer.WriteLine(TotalChainLength);
+        writer.WriteLine(UsedPrimaryBlocks);
+        PrimaryFile.SaveControlData(writer);
+        OverflowFile.SaveControlData(writer);
+        writer.Close();
     }
 
     // zápis blokov zo sekvencie primárneho bloku "primaryBlock" na indexe "primaryIndex"

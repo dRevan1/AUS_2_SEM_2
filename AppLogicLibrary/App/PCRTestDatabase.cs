@@ -8,14 +8,40 @@ public class PCRTestDatabase
 {
     public LinearHashFile<Person> PeopleFile { get; private set; }
     public LinearHashFile<PCRTest> PcrTestFile { get; private set; }
+    private string Name { get; set; }
 
     private Person personDataInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
     private PCRTest testDataInstance = new PCRTest(1, 1, 2025, 1, 1, "0", 0, false, 0.0, "empty");
     public PCRTestDatabase(int peopleMinMod, string peoplePPath, string peopleOPath, int peoplePBlcSize, int peopleOBlcSize, 
-                           int pcrMinMod, string pcrPPath, string pcrOPath, int pcrPBlcSize, int pcrOBlcSize)
+                           int pcrMinMod, string pcrPPath, string pcrOPath, int pcrPBlcSize, int pcrOBlcSize, string name)
     {
         PeopleFile = new LinearHashFile<Person>(peopleMinMod, peoplePPath, peopleOPath, peoplePBlcSize, peopleOBlcSize, personDataInstance);
         PcrTestFile = new LinearHashFile<PCRTest>(pcrMinMod, pcrPPath, pcrOPath, pcrPBlcSize, pcrOBlcSize, testDataInstance);
+        Name = name;
+    }
+
+    public PCRTestDatabase(string pplControlFilePath, string tControlFilePath, string name)
+    {
+        PeopleFile = new LinearHashFile<Person>(pplControlFilePath);
+        PcrTestFile = new LinearHashFile<PCRTest>(tControlFilePath);
+        Name = name;
+    }
+
+    public void SaveControlData()
+    {
+        string filePath = Name + "_ppl_control.csv";
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            PeopleFile.SaveControlData(writer);
+            writer.Close();
+        }
+
+        filePath = Name + "_test_control.csv";
+        using (StreamWriter writer = new StreamWriter(filePath))
+        {
+            PcrTestFile.SaveControlData(writer);
+            writer.Close();
+        }
     }
 
     private List<PCRTest> GetPatientsTests(Person person)

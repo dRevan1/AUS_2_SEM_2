@@ -311,7 +311,7 @@ public class LinearHashFileTester
     }
 
     // kontorla výsledkov getov, index je index na ktorý bol záznam zahešovaný a expected je osoba, ktorá sa hľadala, actual osoba, ktorá sa našla
-    private bool CheckGetResults(List<(int, Person?, Person?)> successfulGetList, List<(int, Person?, Person?)> failedGetList)
+    private bool CheckGetUpdateResults(List<(int, Person?, Person?)> successfulGetList, List<(int, Person?, Person?)> failedGetList, List<(int, Person?, Person?)> updateList)
     {
         foreach (var (index, expected, actual) in successfulGetList)
         {
@@ -326,6 +326,14 @@ public class LinearHashFileTester
             if (actual != null)
             {
                 Console.WriteLine($"Linear hash file test failed at unsuccessful get - expected null, got person with ID {actual.ID}");
+                return false;
+            }
+        }
+
+        foreach (var (index, expected, actual) in updateList)
+        {
+            if (!ComparePerson(expected, actual, customMsg: "Linear hash file test failed at update:"))
+            {
                 return false;
             }
         }
@@ -414,6 +422,47 @@ public class LinearHashFileTester
         }
     }
 
+    private Person? TryToFindRecord(Block<Person> block, Person person)
+    {
+        Person result;
+        for (int i = 0; i < block.ValidCount; i++)  // prejdú sa validné záznamy a skúsi sa nájsť hľadaný záznam
+        {
+            if (block.RecordsList[i].Equals(person))
+            {
+                result = block.RecordsList[i];
+                return result;
+            }
+        }
+
+        return default;
+    }
+
+    private void UpdateRecord(Person person)
+    {
+        DateTime DOB = RandomDate(new DateTime(1960, 1, 1), new DateTime(2005, 1, 1));
+        person.DayOfBirth = (byte)DOB.Day;
+        person.MonthOfBirth = (byte)DOB.Month;
+        person.YearOfBirth = (ushort)DOB.Year;
+
+        int index = HashRecord(person);
+        PrimaryHashBlock<Person> primaryBlock = PrimaryFile[index];
+        if (TryToFindRecord(primaryBlock, person) != null)
+        {
+            primaryBlock.UpdateRecord(person);
+            return;
+        }
+
+        while (primaryBlock.NextBlockIndex != -1)
+        {
+            primaryBlock = OverflowFile[primaryBlock.NextBlockIndex];
+            if (TryToFindRecord(primaryBlock, person) != null)
+            {
+                primaryBlock.UpdateRecord(person);
+                return;
+            }
+        }
+    }
+
     public Person GeneratePerson(int id, DateTime start = default, DateTime end = default)
     {
         DateTime randomDate = (start == default || end == default) ? RandomDate(new DateTime(1960, 1, 1), new DateTime(2023, 12, 31)) : RandomDate(start, end);
@@ -455,6 +504,7 @@ public class LinearHashFileTester
         List<Person> insertedPeople = new List<Person>();
         List<(int, Person?, Person?)> successfulGetList = new List<(int, Person?, Person?)>(); // zoznam hľadaní, ktoré vrátia osobu
         List<(int, Person?, Person?)> failedGetList = new List<(int, Person?, Person?)>();  // zoznam hľadaní, ktoré osobu nenájdu - vrátia null
+        List<(int, Person?, Person?)> updateList = new List<(int, Person?, Person?)>();  // zoznam upravených záznamov - po zavolaní update sa aktualizovaný záznam vyhľadá na kontrolu
 
 
         for (int i = 0; i < Mod; i++)
@@ -515,7 +565,7 @@ public class LinearHashFileTester
                     Split(record);
                 }
             }
-            else   // GET
+            else if (operationType < 0.8)   // GET
             {
                 double successfulGetChance = rand.NextDouble();
                 Person? foundPerson;
@@ -527,28 +577,49 @@ public class LinearHashFileTester
                         randomRecord = insertedPeople[rand.Next(insertedPeople.Count)];
                         index = HashRecord(randomRecord);
                         foundPerson = linHashFile.Get(randomRecord);
-                        successfulGetList.Add((index, randomRecord, foundPerson));
+                        if (foundPerson != null)
+                        {
+                            foundPerson = foundPerson.CreateClass();
+                        }
+                        successfulGetList.Add((index, randomRecord.CreateClass(), foundPerson));
                     }
                     else
                     {
                         foundPerson = linHashFile.Get(record);
-                        failedGetList.Add((index, record, foundPerson));
+                        failedGetList.Add((index, record.CreateClass(), foundPerson));
                     }
                 }
                 else  // neúspešný GET
                 {
                     foundPerson = linHashFile.Get(record);
-                    failedGetList.Add((index, record, foundPerson));
+                    failedGetList.Add((index, record.CreateClass(), foundPerson));
+                }
+            }
+            else   // UPDATE
+            {
+                Person? foundPerson;
+                if (insertedPeople.Count > 0)
+                {
+                    randomRecord = insertedPeople[rand.Next(insertedPeople.Count)];
+                    UpdateRecord(randomRecord);  // náhodnú osobu aktualizujeme tu aj v hash súbore, následne ju v súbore vyhľadáme a výsledok uložíme do zoznamu update na porovnanie
+                    index = HashRecord(randomRecord);
+                    linHashFile.Update(randomRecord);
+                    foundPerson = linHashFile.Get(randomRecord);
+                    if (foundPerson != null)
+                    {
+                        foundPerson = foundPerson.CreateClass();
+                    }
+                    updateList.Add((index, randomRecord.CreateClass(), foundPerson));
                 }
             }
         }
 
-        if (!CheckFileContents(linHashFile) && CheckGetResults(successfulGetList, failedGetList))
+        if (!CheckFileContents(linHashFile) && CheckGetUpdateResults(successfulGetList, failedGetList, updateList))
         {
             Console.WriteLine("Check file contents test failed");
             return;
         }
-        if (!CheckGetResults(successfulGetList, failedGetList))
+        if (!CheckGetUpdateResults(successfulGetList, failedGetList, updateList))
         {
             return;
         }
