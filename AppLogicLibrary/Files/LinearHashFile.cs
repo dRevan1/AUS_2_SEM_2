@@ -108,11 +108,11 @@ public class LinearHashFile<T> where T : IDataClassOperations<T>, IByteOperation
         double loadFactor = (double)TotalRecordsCount / (double)TotalSpace;
         double averageChainLength = (double)TotalChainLength / (double)UsedPrimaryBlocks;
 
-        if (loadFactor > 0.88)
+        if (loadFactor > 0.85)
         {
             return true;
         }
-        else if (averageChainLength > 0.82)
+        else if (averageChainLength > 1.2)
         {
             return true;
         }

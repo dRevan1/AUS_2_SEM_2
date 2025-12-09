@@ -86,7 +86,7 @@ public class PCRTestDatabase
 
         for (uint i = 1; i <= testsCount; i++)
         {
-            int personIndex = (int)((i - 1) / 2);
+            int personIndex = (int)((i - 1) / 2); // vydeliť počtom testov pre 1 osobu, teraz každá dostane 2 a počet testov musí byť 2*počet osôb
             int personID = int.Parse(people[personIndex].ID);
             PCRTest test = tester.GeneratePCRTest(i, personID, start, end);
             (byte, byte, ushort, byte, byte) dateTime = (test.DayOfTest, test.MonthOfTest, test.YearOfTest, test.MinuteOfTest, test.HourOfTest);

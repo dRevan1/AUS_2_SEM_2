@@ -347,11 +347,11 @@ public class LinearHashFileTester
         double loadFactor = (double)TotalRecords / (double)TotalSpace;
         double averageChainLength = (double)TotalChainLength / (double)UsedPrimaryBlocks;
 
-        if (loadFactor > 0.88)
+        if (loadFactor > 0.85)
         {
             return true;
         }
-        else if (averageChainLength > 0.82)
+        else if (averageChainLength > 1.2)
         {
             return true;
         }
@@ -611,6 +611,12 @@ public class LinearHashFileTester
                     }
                     updateList.Add((index, randomRecord.CreateClass(), foundPerson));
                 }
+            }
+
+            if (i % 1000 == 0 && !CheckFileContents(linHashFile))  // každých 1000 iterácií sa kontroluje obsah súborov
+            {
+               Console.WriteLine("Check file contents test failed");
+               return;
             }
         }
 

@@ -322,7 +322,7 @@ public class HeapFile<T> where T : IDataClassOperations<T>, IByteOperations
 
     public void CloseFile()
     {
-        
+        Stream.Close();
     }
 
     // s generikom Blok aby to mohol byť zoznam rôzneho typu bloku - napr. aj primary alebo overflow pre hash file

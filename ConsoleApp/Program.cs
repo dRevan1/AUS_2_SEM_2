@@ -4,7 +4,7 @@ using SEM_2_CORE.Testers;
 
 LinearHashFileTester linTester = new LinearHashFileTester();
 Person dataInstance = new Person("Gordon", "Freeman", 9, 4, 1995, "3");
-int primaryBlockSize = 500, overflowBlockSize = 250, mod = 4;
-LinearHashFile<Person> linHashFile = new LinearHashFile<Person>(mod, "test.bin", "overflow.bin", primaryBlockSize, overflowBlockSize, dataInstance);
+int primaryBlockSize = 670, overflowBlockSize = 250, mod = 4;
+//LinearHashFile<Person> linHashFile = new LinearHashFile<Person>(mod, "test.bin", "overflow.bin", primaryBlockSize, overflowBlockSize, dataInstance);
 
-linTester.LinearHashTest(linHashFile, 1_000_000);
+//linTester.LinearHashTest(linHashFile, 100_00);
